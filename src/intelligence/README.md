@@ -6,6 +6,120 @@ observation and symptom. Agent and CLI callers pass the same photo to both calls
 screen output shapes are unchanged. This prototype does not include a company manual
 corpus, a general conversation-memory system, dedicated image search or a new diagnostic loop.
 
+## Teammate takeover: use your own laptop and account
+
+You do not need Nikhil's `.env.local`, Codex login, or API keys. Clone/pull main,
+use your own local login, and supply your own environment values. No source edit
+is needed to change accounts, executable, model, or intelligence provider.
+
+### 1. Install and authenticate
+
+On macOS/Linux, install Node 24 (or Node 22.23.2+) and use a fresh checkout:
+
+```sh
+git clone https://github.com/Benonii/facetime-support-agent.git
+cd facetime-support-agent
+npm ci
+npm install -g @openai/codex
+codex login
+codex login status
+codex --version
+codex exec --help
+# Fresh checkout only; do not overwrite an existing local configuration.
+cp .env.example .env.local
+```
+
+Choose **Sign in with ChatGPT** using your own account with Codex access. Usage
+and model access follow that account's subscription/workspace limits. Authentication
+is local to the OS user running the worker; do not copy someone else's auth cache.
+See the official [CLI installation](https://learn.chatgpt.com/docs/codex/cli) and
+[authentication](https://learn.chatgpt.com/docs/auth) documentation.
+
+The installed CLI must support `exec --ephemeral --ignore-user-config
+--output-schema --image` and repeated `--image` arguments. Check its help before
+running. If a flag is unsupported, update the CLI; the original verification used
+the desktop-bundled CLI, so a fresh standalone installation still needs the photo
+smoke run below. Do not silently drop isolation or schema flags to work around an
+older version. `CODEX_BIN` can point at your own compatible executable (path only,
+not a shell command); leave it unset if `codex` is on PATH. Leave `CODEX_MODEL`
+unset initially, or choose a model your account can access. No model is pinned to
+Nikhil's account. Custom user config is ignored by this adapter.
+
+### 2. Prove intelligence alone
+
+Set these values in your gitignored `.env.local`:
+
+```dotenv
+INTELLIGENCE_PROVIDER=codex-cli
+MOCK_INTELLIGENCE=0
+```
+
+This explicit selection matters: `.env.example` sets `openai`, and an explicit
+value overrides the photo runner's CLI default. For a photo-only run, leave
+`OPENAI_API_KEY`, `LIVEKIT_*`, and `CHERT_MESSAGING_SECRET` blank. Keenable's key is
+optional; without one the code uses its public endpoint.
+
+```sh
+npm run try:intel -- /absolute/path/your-photo.jpg "Where does this connector go?" --out data/intelligence/first-run
+```
+
+Use your own approved photo and a new output directory for each run. Inspect
+`result.json` for provider `codex-cli`, successful model calls and the actual model
+identity; inspect `preview.png` for the correct destination. A `failure.json` is a
+failure, not a successful smoke run. The single-photo runner does not retain a
+sequence; the LiveKit bridge carries earlier images as described below.
+
+### 3. Choose the rest of the runtime
+
+| Mode | Local credentials/configuration |
+| --- | --- |
+| CLI photo intelligence | Your saved Codex login; no OpenAI API key needed for intelligence |
+| API photo intelligence | `INTELLIGENCE_PROVIDER=openai`, your `OPENAI_API_KEY`; optionally `VISION_MODEL` / `EXTRACT_MODEL` |
+| Live voice + CLI intelligence | Your saved Codex login **plus** a separate `OPENAI_API_KEY` with Realtime access and `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` |
+| iMessage + CLI intelligence | Your saved Codex login, explicit `INTELLIGENCE_PROVIDER=codex-cli`, `MOCK_INTELLIGENCE=0`, and authorized `CHERT_MESSAGING_SECRET`; optional tenant slug |
+
+A ChatGPT subscription login does **not** supply the application's Realtime voice
+API credentials. For API intelligence, set the provider to `openai`; this CLI
+adapter deliberately does not forward application API keys to its subprocess.
+For a hosted/public service or CI, use API-backed intelligence and server-side
+secret management rather than exposing a developer's subscription CLI.
+
+For live voice, agree on one worker owner and `AGENT_NAME` with the telephony owner:
+
+```sh
+AGENT_NAME=intelligence-demo npm run agent:cli
+```
+
+The worker, server and Chert dispatch must agree on the LiveKit project and agent
+name. Use your own LiveKit project for isolated testing, or receive authorized
+shared project credentials privately. Set `SERVER_URL` to the server you actually
+use; a teammate's temporary tunnel URL can change. Do not run competing workers
+with the same name. See [telephony's current routing handoff](../../agent-comms/telephony/PROVIDES.md)
+for Chert and iMessage; a working photo run does not prove FaceTime is working.
+
+### Credential and output boundaries
+
+- Git tracks only the blank/placeholder `.env.example`. `.env`, `.env.*` (except
+  that template), and `data/` are ignored. Never force-add local configuration.
+- Codex caches its own login outside the checkout, normally under `~/.codex` or
+  the OS credential store. Do not put `CODEX_HOME` inside this repository or commit
+  `auth.json`. Run login and the worker as the same local user.
+- The CLI subprocess receives only OS/login-discovery environment variables,
+  not the application's OpenAI, LiveKit, Chert or Keenable keys. Images are sent
+  to the selected inference provider; local CLI authentication does not mean
+  inference runs offline. Temporary inference files are removed afterward.
+- Private laptop photos and replay outputs were not committed. Use ignored
+  `data/` for new output; custom `--out` paths are not automatically ignored.
+- Quick check before a commit: `git ls-files '.env' '.env.*'` should list only
+  `.env.example`; `git check-ignore .env.local` should print `.env.local`.
+
+Handoff audit on 2026-10-23: all 149 reachable Git blobs across 49 fetched/local
+commits were checked against the three distinct nonempty local credential values
+available in the two project `.env`/`.env.local` locations, plus common key/private-key
+patterns. No matches were found. Environment/auth filename history contained only
+`.env.example`. This is a scoped repository check, not an audit of external logs,
+unfetched/deleted history or every possible secret format.
+
 ## Run with a real photo
 
 Use Node 22.23.2+ or Node 24 and installed dependencies. The photo runner defaults

@@ -27,6 +27,8 @@ LiveKit room ── facetime-remote-audio ─▶ src/agent/  (OpenAI Realtime vo
 
 For the independent caller-screen and conversation demo, run `npm run screens:demo` and open http://localhost:8790. No API keys are needed. See [the screens handoff](src/screens/README.md) for the optional agent context contract.
 
+**Taking over on another laptop?** Start with the [intelligence setup and credential handoff](src/intelligence/README.md#teammate-takeover-use-your-own-laptop-and-account). It covers your own Codex subscription login, local environment values, a photo smoke run, and separate voice credentials.
+
 ```bash
 nvm use 22            # 22.23.2+ or 24.x
 npm install
