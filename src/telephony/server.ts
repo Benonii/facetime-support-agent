@@ -19,6 +19,7 @@ const telephony = createTelephony(liveKit(url, key, secret), {
   agentName: process.env.AGENT_NAME || 'support-agent',
   budgetMs: Number(process.env.CHERT_DECISION_BUDGET_MS ?? 4000),
   truckRollCost: Number(process.env.TRUCK_ROLL_COST ?? 150),
+  brandName: process.env.BRAND_NAME || 'Lumen Fiber',
   warmPool: process.env.WARM_POOL !== '0',
 });
 

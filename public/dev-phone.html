@@ -2,58 +2,149 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Dev phone</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#0b0f14" />
+<title>__BRAND__ Video Support</title>
 <style>
-  body { margin: 0; background: #0b0f14; color: #e8edf2; font: 16px system-ui, sans-serif; }
-  #agent { width: 100vw; height: 100vh; object-fit: contain; background: #000; }
-  #me { position: fixed; right: 12px; bottom: 90px; width: 30vw; border-radius: 12px; border: 2px solid #3ddc97; }
-  #bar { position: fixed; left: 0; right: 0; bottom: 0; padding: 16px; display: flex; gap: 8px; background: #0b0f14cc; }
-  button { flex: 1; padding: 14px; font-size: 18px; border: 0; border-radius: 12px; background: #3ddc97; color: #0b0f14; font-weight: 700; }
-  button.alt { background: #2a3440; color: #e8edf2; }
-  #log { position: fixed; top: 8px; left: 8px; font-size: 12px; opacity: .7; white-space: pre; }
+  :root { --bg: #0b0f14; --panel: #151b23; --text: #e8edf2; --dim: #8b98a5; --accent: #3ddc97; --bad: #ff5d5d; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 16px -apple-system, system-ui, sans-serif; overflow: hidden; }
+  .screen { position: fixed; inset: 0; display: none; }
+  .screen.on { display: flex; }
+
+  /* Idle / ended */
+  #home { flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px; text-align: center; }
+  #home h1 { margin: 0; font-size: 30px; }
+  #home p { margin: 0; color: var(--dim); max-width: 320px; line-height: 1.4; }
+  .logo { width: 84px; height: 84px; border-radius: 24px; background: var(--accent); display: grid; place-items: center; font-size: 42px; }
+  #call { margin-top: 12px; width: 88px; height: 88px; border-radius: 50%; border: 0; background: var(--accent); color: var(--bg); font-size: 38px; }
+  #call:disabled { opacity: .5; }
+  #homeNote { min-height: 22px; font-size: 14px; }
+  #homeNote.err { color: var(--bad); }
+
+  /* In call */
+  #incall { background: #000; }
+  #agent { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+  #me { position: absolute; right: 14px; top: calc(14px + env(safe-area-inset-top)); width: 28vw; max-width: 140px; aspect-ratio: 9 / 16;
+        object-fit: cover; border-radius: 14px; border: 2px solid var(--accent); background: var(--panel); }
+  #status { position: absolute; left: 14px; top: calc(14px + env(safe-area-inset-top)); padding: 8px 12px; border-radius: 999px;
+            background: #0b0f14cc; font-size: 14px; }
+  #status::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-right: 8px; }
+  #status.wait::before { background: #ffb020; }
+  #bar { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; gap: 22px;
+         padding: 18px 16px calc(22px + env(safe-area-inset-bottom)); background: linear-gradient(transparent, #000c 40%); }
+  .round { width: 64px; height: 64px; border-radius: 50%; border: 0; background: #ffffff2b; color: #fff; font-size: 26px; }
+  .round.off { background: #fff; color: #000; }
+  #hang { background: var(--bad); }
+  #unmute { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: none; padding: 16px 22px; border: 0;
+            border-radius: 14px; background: var(--accent); color: var(--bg); font-size: 18px; font-weight: 700; }
 </style>
 </head>
 <body>
-<!-- Stand-in for a FaceTime caller: publishes your camera as "facetime-remote-video" so the agent code path is identical. -->
-<video id="agent" autoplay playsinline></video>
-<video id="me" autoplay playsinline muted></video>
-<div id="log"></div>
-<div id="bar">
-  <button id="start">Start call</button>
-  <button id="flip" class="alt">Flip camera</button>
-  <button id="end" class="alt">End</button>
-</div>
+<!-- Web caller: publishes camera + mic with the same track names as Chert's FaceTime bridge, so the agent code is identical. -->
+<section id="home" class="screen on">
+  <div class="logo">🛠️</div>
+  <h1>__BRAND__ Support</h1>
+  <p>Video call a technician. Point your camera at the device and we'll walk you through the fix.</p>
+  <button id="call" aria-label="Start video call">📞</button>
+  <div id="homeNote"></div>
+</section>
+
+<section id="incall" class="screen">
+  <video id="agent" autoplay playsinline></video>
+  <video id="me" autoplay playsinline muted></video>
+  <div id="status" class="wait">Connecting…</div>
+  <button id="unmute">Tap to hear the technician</button>
+  <div id="bar">
+    <button id="mute" class="round" aria-label="Mute">🎙️</button>
+    <button id="flip" class="round" aria-label="Flip camera">🔄</button>
+    <button id="hang" class="round" aria-label="Hang up">✕</button>
+  </div>
+</section>
+
 <script src="https://cdn.jsdelivr.net/npm/livekit-client@2.15.0/dist/livekit-client.umd.js"></script>
 <script>
-const { Room, RoomEvent, Track, createLocalVideoTrack, createLocalAudioTrack } = LivekitClient;
-const log = (m) => (document.getElementById('log').textContent += m + '\n');
-let room, cam, facing = 'environment';
+if (!window.LivekitClient) document.write('<script src="https://unpkg.com/livekit-client@2.15.0/dist/livekit-client.umd.js"><\/script>');
+</script>
+<script>
+const $ = (id) => document.getElementById(id);
+let room, cam, mic, session, wakeLock, agentHere = false, facing = 'environment', muted = false;
+
+function show(id) { document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('on', s.id === id)); }
+function status(text, waiting) { $('status').textContent = text; $('status').classList.toggle('wait', !!waiting); }
+function note(text, err) { $('homeNote').textContent = text; $('homeNote').classList.toggle('err', !!err); }
 
 async function publishCam() {
+  const { createLocalVideoTrack, Track } = LivekitClient;
   if (cam) { await room.localParticipant.unpublishTrack(cam); cam.stop(); }
   cam = await createLocalVideoTrack({ facingMode: facing, resolution: { width: 1280, height: 720 } });
   await room.localParticipant.publishTrack(cam, { name: 'facetime-remote-video', source: Track.Source.Camera, simulcast: false });
-  cam.attach(document.getElementById('me'));
+  cam.attach($('me'));
+  $('me').style.transform = facing === 'user' ? 'scaleX(-1)' : '';
 }
 
-document.getElementById('start').onclick = async () => {
-  log('creating session…');
-  const s = await fetch('/api/dev-session', { method: 'POST' }).then((r) => r.json());
-  room = new Room({ adaptiveStream: false });
-  room.on(RoomEvent.TrackSubscribed, (track) => {
-    log('agent ' + track.kind);
-    track.attach(track.kind === 'video' ? document.getElementById('agent') : document.body.appendChild(document.createElement('audio')));
-  });
-  await room.connect(s.url, s.token);
-  log('connected ' + s.room);
-  const mic = await createLocalAudioTrack({ echoCancellation: true, noiseSuppression: true });
-  await room.localParticipant.publishTrack(mic, { name: 'facetime-remote-audio', source: Track.Source.Microphone });
-  await publishCam();
-  log('say hi 👋');
+async function start() {
+  const { Room, RoomEvent, Track, createLocalAudioTrack } = LivekitClient;
+  $('call').disabled = true;
+  agentHere = false;
+  note('Connecting…');
+  try {
+    // Ask for camera + mic first, inside the tap, so iOS shows the permission prompt.
+    mic = await createLocalAudioTrack({ echoCancellation: true, noiseSuppression: true, autoGainControl: true });
+    const res = await fetch('/api/dev-session', { method: 'POST' });
+    session = await res.json();
+    if (!res.ok) throw new Error(session.error || 'support line is busy');
+
+    room = new Room({ adaptiveStream: false, dynacast: false });
+    room.on(RoomEvent.TrackSubscribed, (track) => {
+      if (track.kind === 'video') { track.attach($('agent')); agentHere = true; status('Technician here · say hi'); }
+      else { track.attach(document.body.appendChild(document.createElement('audio'))); }
+    });
+    room.on(RoomEvent.AudioPlaybackStatusChanged, () => { $('unmute').style.display = room.canPlaybackAudio ? 'none' : 'block'; });
+    room.on(RoomEvent.Disconnected, () => end(false));
+    await room.connect(session.url, session.token);
+    await room.startAudio().catch(() => {}); // still inside the tap gesture: unlocks speaker audio on iOS
+    await room.localParticipant.publishTrack(mic, { name: 'facetime-remote-audio', source: Track.Source.Microphone });
+    await publishCam();
+    show('incall');
+    if (!agentHere) status('Waiting for the technician…', true);
+    wakeLock = await navigator.wakeLock?.request('screen').catch(() => null);
+  } catch (e) {
+    console.error(e);
+    mic?.stop(); cam?.stop(); room?.disconnect();
+    room = cam = mic = undefined;
+    note(e.name === 'NotAllowedError' ? 'Allow camera and microphone, then try again.' : `Couldn't connect: ${e.message}`, true);
+  } finally {
+    $('call').disabled = false;
+  }
+}
+
+function end(disconnect = true) {
+  if (!session) return;
+  const s = session;
+  session = undefined;
+  if (disconnect) room?.disconnect();
+  cam?.stop(); mic?.stop();
+  room = cam = mic = undefined;
+  wakeLock?.release().catch(() => {});
+  fetch('/api/dev-session/end', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room: s.room }), keepalive: true }).catch(() => {});
+  show('home');
+  note('Call ended. Thanks for calling.');
+}
+
+$('call').onclick = start;
+$('hang').onclick = () => end(true);
+$('unmute').onclick = () => room?.startAudio();
+$('flip').onclick = async () => { facing = facing === 'environment' ? 'user' : 'environment'; if (room) await publishCam(); };
+$('mute').onclick = async () => {
+  if (!mic) return;
+  muted = !muted;
+  muted ? await mic.mute() : await mic.unmute();
+  $('mute').classList.toggle('off', muted);
+  $('mute').textContent = muted ? '🔇' : '🎙️';
 };
-document.getElementById('flip').onclick = async () => { facing = facing === 'environment' ? 'user' : 'environment'; if (room) await publishCam(); };
-document.getElementById('end').onclick = () => room?.disconnect();
+window.addEventListener('pagehide', () => end(true));
 </script>
 </body>
 </html>

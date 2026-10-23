@@ -185,7 +185,32 @@ test('dev session (/phone) gets a room with the agent and a token', async () => 
   const s = await (await post(app, '/api/dev-session', {})).json();
   assert.equal(s.url, cfg.livekitUrl);
   assert.equal(jwt(s.token).video.room, s.room);
-  assert.match(s.callId, /^dev-/);
+  assert.match(s.callId, /^web-/);
+});
+
+test('web call (/phone) takes the warm room instantly, hang-up deletes it', async () => {
+  const f = fakeLiveKit(300);
+  const t = make(f.lk, { warmPool: true });
+  t.start();
+  await wait(350);
+  const t0 = Date.now();
+  const s = await (await post(t.app, '/api/dev-session', {})).json();
+  assert.ok(Date.now() - t0 < 100, `took ${Date.now() - t0} ms`);
+  assert.match(s.room, /support-warm-/);
+  assert.notEqual(jwt(s.token).sub, `agent-${s.room}`);
+  assert.deepEqual(await (await post(t.app, '/api/dev-session/end', { room: s.room })).json(), { ok: true });
+  await wait(10);
+  assert.ok(f.deleted.includes(s.room));
+  assert.equal((await post(t.app, '/api/dev-session/end', { room: s.room })).status, 404, 'only rooms we handed out, once');
+});
+
+test('/phone page is served with the brand filled in', async () => {
+  const { app } = make(fakeLiveKit().lk, { brandName: 'Acme Fiber' });
+  const html = await (await app.request('/phone')).text();
+  assert.match(html, /Acme Fiber Support/);
+  assert.doesNotMatch(html, /__BRAND__/);
+  assert.match(html, /facetime-remote-video/);
+  assert.match(html, /facetime-remote-audio/);
 });
 
 test('/health reports warm room readiness', async () => {

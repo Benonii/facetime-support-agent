@@ -2,6 +2,14 @@
 
 Owner: Ben. Code: on main. Start it with `npm run server` (port 8787).
 
+## Demo path now: web call at `/phone` (2026-10-23 3:15 PM PT)
+
+Chert is out of the demo path. Callers use our own page: `https://<Ben's tunnel>/phone`.
+- Publishes `facetime-remote-audio` + `facetime-remote-video` (same names as Chert's bridge), plays the agent's audio + `agent-guide-card` video. **No agent or screens change needed.**
+- Takes the warm room (agent already in it), so the call starts in ms. `JobMetadata.call_id` is the warm id; caller identity is `caller-…`.
+- Hang-up calls `POST /api/dev-session/end {room}`, which deletes the room so the agent job ends.
+- Agent worker must use `AGENT_NAME` = the server's (`support-agent` default) in the shared LiveKit project.
+
 ## Calls right now: `chert dev`, not the webhook (2026-10-23)
 
 The Chert webhook (`/webhooks/chert`) is not wired to our line yet (Shared line, console can't save the URL). Real FaceTime calls go through `chert dev` on Ben's laptop instead:

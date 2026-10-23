@@ -12,6 +12,7 @@ export interface TelephonyConfig {
   agentName: string;
   budgetMs: number; // how long after Chert's created_at we may take to answer (Chert's hard limit is ~5 s)
   truckRollCost: number;
+  brandName?: string; // shown on the /phone call page
   warmPool: boolean;
   pollMs?: number; // how often to check whether the agent joined
   warmRetryMs?: number;
@@ -153,7 +154,7 @@ export function createTelephony(lk: LiveKitOps, cfg: TelephonyConfig) {
   const page = (f: string) => readFileSync(new URL(`../../public/${f}`, import.meta.url), 'utf8');
 
   app.get('/', (c) => c.html(page('dashboard.html').replace('__TRUCK_ROLL_COST__', String(cfg.truckRollCost))));
-  app.get('/phone', (c) => c.html(page('dev-phone.html')));
+  app.get('/phone', (c) => c.html(page('dev-phone.html').replaceAll('__BRAND__', cfg.brandName ?? 'Lumen Fiber')));
   app.get('/health', (c) => c.json({ ok: true, warm_room_ready: warmReady, active_calls: seen.size }));
 
   // Chert BYOR webhook. Line policy customer_decides, Integration URL https://<tunnel>/webhooks/chert.
@@ -198,16 +199,32 @@ export function createTelephony(lk: LiveKitOps, cfg: TelephonyConfig) {
     return c.json({ ok: true });
   });
 
-  // Dev path: /phone on any device with a camera joins as a fake FaceTime caller with the same track names.
+  // Web call path (/phone): any phone browser joins as the caller with the same track names as Chert's bridge.
+  // Takes the warm room like a real call, so the agent is already there when the page connects.
+  const webRooms = new Set<string>();
   app.post('/api/dev-session', async (c) => {
-    const callId = `dev-${randomUUID()}`;
+    const callId = `web-${randomUUID()}`;
+    const t0 = Date.now();
     try {
-      const prepared = await prepareRoom(callId, Date.now() + 20_000);
-      const token = await mintToken(cfg.apiKey, cfg.apiSecret, prepared.room, `dev-phone-${callId.slice(4, 10)}`, 1800);
+      const prepared = await prepareForCall(callId, Date.now() + 15_000);
+      const token = await mintToken(cfg.apiKey, cfg.apiSecret, prepared.room, `caller-${callId.slice(4, 10)}`, 1800);
+      webRooms.add(prepared.room);
+      log(`[web] call ${prepared.room} ready in ${Date.now() - t0} ms`);
       return c.json({ url: cfg.livekitUrl, token, room: prepared.room, callId });
     } catch (e) {
+      log(`[web] call failed after ${Date.now() - t0} ms: ${(e as Error).message}`);
       return c.json({ error: (e as Error).message }, 503);
     }
+  });
+
+  // Hang-up from the page: delete the room so the agent job ends and frees the worker.
+  app.post('/api/dev-session/end', async (c) => {
+    const body = await c.req.json().catch(() => null);
+    const room = body?.room;
+    if (typeof room !== 'string' || !webRooms.delete(room)) return c.json({ error: 'unknown room' }, 404);
+    lk.deleteRoom(room).catch(() => {});
+    log(`[web] call ${room} ended`);
+    return c.json({ ok: true });
   });
 
   // Part 2 (agent) → here. Body is one CallEvent.

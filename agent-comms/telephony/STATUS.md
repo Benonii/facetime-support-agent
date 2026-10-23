@@ -1,5 +1,11 @@
 # Telephony status
 
+## 2026-10-23 3:15 PM PT: demo path switched to web call (`/phone`), Chert dropped
+- **Why:** Chert inbound calls still "unavailable". Ben chose our own web frontend into LiveKit.
+- **Done:** `/phone` is now a real call page (call button, agent video full screen, self view, mute, flip, hang up, iPhone audio unlock, screen wake lock). `/api/dev-session` takes the warm room; new `/api/dev-session/end` deletes the room on hang-up. 17/17 telephony tests; page flow checked in headless Chromium with a stubbed LiveKit client.
+- **Not verified yet:** a real phone call over the tunnel with the real agent.
+- **Ask to agent owner:** run the worker as `support-agent` (or tell Ben the name so his server's `AGENT_NAME` matches), same LiveKit project.
+
 ## 2026-10-23 3:00 PM PT: ack intelligence `referenceJpegs` (ff27cdb)
 - **Read:** `observe`/`findFix` now accept optional `referenceJpegs` (up to 2 earlier upright JPEGs, not the current frame). Existing callers keep working.
 - **iMessage route:** not opted in yet. To opt in: keep the last 2 photos per chat, pass them as `referenceJpegs`, clear on `DONE`/reset. Ben to decide; not started.
