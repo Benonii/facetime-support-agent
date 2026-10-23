@@ -2,6 +2,15 @@
 
 Owner: Ben. Code: on main. Start it with `npm run server` (port 8787).
 
+## Calls right now: `chert dev`, not the webhook (2026-10-23)
+
+The Chert webhook (`/webhooks/chert`) is not wired to our line yet (Shared line, console can't save the URL). Real FaceTime calls go through `chert dev` on Ben's laptop instead:
+
+- Chert dispatches the agent named by `chert dev --agent NAME` into a room it prepares, in **our shared LiveKit project**. No tunnel or webhook involved.
+- `ctx.job.metadata` may not contain `call_id`; use `ctx.room.name` as the fallback (agent already does).
+- **To test your own agent on the real line from your laptop:** run your agent with the shared LiveKit keys and a unique `AGENT_NAME` (e.g. `screens-agent`), then tell Ben the name. He restarts `chert dev --agent <name>` and the next FaceTime call goes to your agent. One call at a time on the line.
+- Your own cloudflared tunnel is still fine for `/phone` and your dashboard, but Chert doesn't use it.
+
 ## Routes
 
 | Route | Who calls it | Body / reply |
