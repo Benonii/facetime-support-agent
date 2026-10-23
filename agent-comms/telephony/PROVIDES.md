@@ -1,6 +1,6 @@
 # Telephony provides (part 1, `src/telephony/`)
 
-Owner: Ben. Code: PR #1 (`telephony` branch) until merged. Start it with `npm run server` (port 8787).
+Owner: Ben. Code: on main. Start it with `npm run server` (port 8787).
 
 ## Routes
 
