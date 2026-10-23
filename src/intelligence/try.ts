@@ -11,7 +11,7 @@ import type { ModelCall } from './model.js';
 const { values, positionals } = parseArgs({ allowPositionals: true, options: {
   step: { type: 'string', default: '1' }, out: { type: 'string' }, facts: { type: 'string' },
 } });
-const [file, symptom = 'my internet is down'] = positionals;
+const [file, symptom = 'the device is not working'] = positionals;
 if (!file || positionals.length > 2) throw new Error('usage: npm run try:intel -- photo.jpg "symptom" [--step 1] [--out new-directory] [--facts human-facts.txt]');
 const step = Number(values.step);
 if (!Number.isInteger(step) || step < 1) throw new Error('--step must be a positive integer');

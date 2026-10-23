@@ -56,21 +56,25 @@ comparison, without feeding those expected answers to the model. Result timings
 separate observation, diagnosis including search, annotation, and rendering;
 model call timings also record provider inference duration.
 
-## Fixed router case and acceptance
+## Fixed device case and acceptance
 
-Collect three photos of the **same actual router**: WAN unplugged, WAN connected,
-and obscured. Record the symptom, visible port label, cable state, readable lights,
-and uncertainty in a facts file. Do not assume cable colors or labels. The
+The demo product and fault are not selected yet. Once chosen, collect a faulty
+view, a comparison view after the relevant action, and an obscured view of the
+**same actual device**. An unplugged/connected WAN cable is one possible example,
+not a requirement. Record the symptom, visible identifiers, state, and uncertainty
+in a facts file. Do not assume cable colors or labels. The
 planning sketch and synthetic test images are not substitutes for device photos.
 
-Run the faulty photo twice into separate directories, then the connected and
+Run the faulty photo twice into separate directories, then the comparison and
 obscured photos with the same symptom. Check image hashes for repeatability,
-visible facts, changed cable observations, plausible next steps, source support,
+visible facts, changed observations, plausible next steps, source support,
 and circle placement against `processed.jpg`. Inspect the obscured result for
 uncertainty and no invented target. A connected cable alone is not proof of restored
 internet. Show the real outputs to Nikhil before expanding the live workflow.
 
-Actual router photos are still pending as of this implementation checkpoint.
+Hardware selection and actual device photos are still pending. Product-specific
+manual ingestion and tuned retrieval are deferred until that choice. A separate
+Keenable research session is exploring product-agnostic query/result design.
 Unit tests, CLI preflight, and a non-device negative case do not establish device
 accuracy or a completed repair/FaceTime call.
 
