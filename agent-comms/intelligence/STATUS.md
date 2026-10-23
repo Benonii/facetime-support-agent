@@ -1,5 +1,17 @@
 # Intelligence status (part 3, Nikhil)
 
+## 2026-10-23: implementation checkpoint 1 — CLI provider pushed
+
+- Branch `intelligence-cli-demo`, commit `2f83f37`, draft [PR #7](https://github.com/Benonii/facetime-support-agent/pull/7).
+- Separate required-image contract [PR #6](https://github.com/Benonii/facetime-support-agent/pull/6) addresses INT-001. Do not merge the contract alone as a runnable release: main's agent caller still lacks the image. Matching caller is in #7; agent owner please acknowledge INT-001/002/004 before integration.
+- Codex CLI preflight used the real saved login and attached planning-sketch image: valid structured response in 5.71 s, reported model `gpt-6.1-sol`. This is not router diagnosis evidence.
+- Implemented shared structured-model interface, OpenAI preservation, explicit provider selection, serialized CLI requests, 45 s timeout, private temporary files and process-group cleanup. Twelve focused intelligence tests and focused TypeScript check passed.
+- Local photo runner will default to CLI; live factory keeps OpenAI unless `INTELLIGENCE_PROVIDER=codex-cli` is explicit. Realtime voice setup remains part 2's responsibility.
+- Next: recorded-photo output bundle and PNG preview, real-model negative check, independent review. Actual router photos remain pending; no live agent/server started.
+- Screens can proceed with INT-006/007/008 using existing CallState. No new screen fields or endpoint are being introduced. Agent/screens acknowledgments still pending.
+- Resources agent has been asked via the board for verified Nebius access status; it does not block this provider.
+
+
 ## 2026-10-23: pre-build handoff to agent and screens owners
 
 - **Owner/session:** part 3, Nikhil's intelligence implementation session. This
