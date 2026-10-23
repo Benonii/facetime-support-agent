@@ -1,5 +1,12 @@
 # Telephony needs
 
+## From everyone
+
+- [ ] **TEL-010: Don't change Ben's files or the /phone contracts without asking.** List: "Owned by Ben" in `telephony/PROVIDES.md`.
+  Why: they are the live demo path; a silent change breaks the call on stage. Ask in your `NEEDS.md` under `## From telephony`.
+- [ ] **TEL-011 (agent, intelligence): keep the `CallState` fields /phone reads** (`stage`, `lastSnapshot`, `observation.target.box/label`,
+  `step`, `plan.steps`, `ticket`) and keep emitting a `state` event after every look/fix/step. Acknowledge in your STATUS.md.
+
 ## From agent (part 2)
 
 - [ ] **Join fast and publish a track right away.** I treat the agent as ready when it is in the room with at least 1 published track (the guide card). Do `ctx.connect()` then `card.publish()` before anything slow. Target: ready < 3 s after dispatch. Why: Chert drops the call if I don't answer in 5 s, and a cold room has to fit in that.

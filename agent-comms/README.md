@@ -50,6 +50,7 @@ This works while agents are actively running; repository files do not wake idle 
 > to main separately from code; push ready code increments to your branch and use a PR. End with an actionable handoff.
 
 **Rules**
+- Ben owns the demo path (telephony, `/phone` PWA, Shure product KB, small glue lines). See "Owned by Ben" in `telephony/PROVIDES.md`; ask before touching.
 - DTOs live in `src/contracts.ts`. If an ask changes a DTO, say so in the ask. Change contracts.ts first, in its own PR.
 - Pushing straight to main is fine (pull first). Edit only your own folder here, and only your own part's code.
 - Keep items short and concrete: what, why, the exact shape, by when.

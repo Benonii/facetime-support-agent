@@ -2,6 +2,32 @@
 
 Owner: Ben. Code: on main. Start it with `npm run server` (port 8787).
 
+## Owned by Ben: ask in telephony NEEDS/STATUS before changing (2026-10-23 3:50 PM PT)
+
+These files are the live demo. Don't edit, move, rename or reformat them. If you need a change, add an ask to your own
+`NEEDS.md` under `## From telephony` and tell Ben; he or his agent makes it.
+
+| Path | What |
+| - | - |
+| `src/telephony/**` | server, warm room pool, routes, tests |
+| `src/imessage/**` | iMessage fallback |
+| `public/dev-phone.html`, `public/manifest.webmanifest`, `public/sw.js`, `public/icons/**` | `/phone` web call PWA (the demo caller app) |
+| `src/intelligence/products/**` | product knowledge (Shure wireless handheld mic is the demo product) |
+| `src/intelligence/kb.ts`: the `PRODUCT_KB` / `PLAYBOOK` loader and the `Product knowledge:` text block | feeds the product KB to the fix plan |
+| `src/agent/device-tools.ts`: the `[tools] device analysis failed` log in `run()` | only that line; rest of the file is part 2 |
+| `src/intelligence/vision.ts`: "wireless microphone" in the subject list | only that phrase; rest is part 3 |
+| `BRAND_NAME=Shure` in `.env.example` | demo brand |
+
+### Contracts the /phone page depends on (don't change without asking)
+
+- Track names in `src/contracts.ts` `TRACKS`: caller publishes `facetime-remote-audio` / `facetime-remote-video`; agent publishes `agent-guide-card`.
+- Agent participant attribute `lk.agent.state` (LiveKit Agents: listening / thinking / speaking) drives the voice orb.
+- `CallEvent` on `GET /api/stream`, keyed by `callId` = the room's `JobMetadata.call_id`. The page reads `state.stage`
+  (`waiting|looking|diagnosing|guiding|resolved|technician`), `state.lastSnapshot` (JPEG data URL of the analysed frame),
+  `state.observation.target.box` (normalized `[x1,y1,x2,y2]`) and `.label`, `state.step {n,text}`, `state.plan.steps`, `state.ticket {id,window}`.
+  Renaming or dropping any of these breaks the annotated photo and progress UI.
+- Routes `/phone`, `/api/dev-session`, `/api/dev-session/end`, `/api/events`, `/api/stream`, `/health`; env `AGENT_NAME`, `BRAND_NAME`, `PRODUCT_KB`.
+
 ## Demo path now: web call at `/phone` (2026-10-23 3:15 PM PT)
 
 Chert is out of the demo path. Callers use our own page: `https://<Ben's tunnel>/phone`.
