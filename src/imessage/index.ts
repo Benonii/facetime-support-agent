@@ -4,6 +4,7 @@ import { createIntelligence } from '../intelligence/index.js';
 import { api, chert } from './chert.js';
 import { createHandler, type InboundEvent } from './handle.js';
 
+if (!process.env.CHERT_MESSAGING_SECRET) throw new Error('Set CHERT_MESSAGING_SECRET in .env.local (console.trychert.com > API keys)');
 process.env.INTELLIGENCE_PROVIDER ??= process.env.OPENAI_API_KEY ? 'openai' : 'codex-cli';
 console.log(`[imessage] intelligence: ${process.env.MOCK_INTELLIGENCE === '1' ? 'mock' : process.env.INTELLIGENCE_PROVIDER}`);
 const handle = createHandler({ chert, intelligence: createIntelligence() });

@@ -78,7 +78,7 @@ export function createHandler(deps: { chert: ChertIMessage; intelligence: Intell
       const plan = await intelligence.findFix({ jpeg, observation, symptom: c.symptom ?? DEFAULT_SYMPTOM });
       Object.assign(c, { jpeg, observation, plan, step: 1 });
       const seen = observation.findings.slice(0, 2).join('; ');
-      await sendStep(chat.id, c, `I can see your ${observation.device.brand} ${observation.device.type}${seen ? `: ${seen}` : ''}.\nLikely cause: ${plan.likely_cause}\n\n`);
+      await sendStep(chat.id, c, `I can see your ${[observation.device.brand, observation.device.type.replace('_', ' ')].filter(Boolean).join(' ')}${seen ? `: ${seen}` : ''}.\nLikely cause: ${plan.likely_cause}\n\n`);
       return;
     }
 
