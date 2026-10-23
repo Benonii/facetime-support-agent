@@ -78,3 +78,13 @@ test('provider selection is explicit and mock override is retained',()=>{
   const before=process.env.MOCK_INTELLIGENCE; process.env.MOCK_INTELLIGENCE='1';
   try {assert.equal(createIntelligence(),mockIntelligence);} finally {if(before===undefined) delete process.env.MOCK_INTELLIGENCE;else process.env.MOCK_INTELLIGENCE=before;}
 });
+
+test('CLI sends current image first and earlier references separately, then removes all images',async()=>{
+ const f=await fixture(`const fs=require('node:fs');const args=process.argv.slice(2);const paths=args.flatMap((v,i)=>v==='--image'?[args[i+1]]:[]);console.log(JSON.stringify({answer:JSON.stringify({paths,bytes:paths.map(p=>fs.readFileSync(p).toString())})}));`);
+ try {
+  const result=await codexModel({command:f.command})({...request,referenceJpegs:[Buffer.from('first-view'),Buffer.from('last-view')]});
+  const got=JSON.parse(result.answer);
+  assert.deepEqual(got.bytes,['test-image','first-view','last-view']);
+  for(const path of got.paths)await assert.rejects(access(path));
+ }finally{await f.close();}
+});

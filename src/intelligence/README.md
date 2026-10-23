@@ -4,7 +4,7 @@ One camera frame plus the caller's symptom produces observations and a short fix
 plan. `FixRequest` in `src/contracts.ts` now requires `jpeg: Buffer` as well as the
 observation and symptom. Agent and CLI callers pass the same photo to both calls;
 screen output shapes are unchanged. This prototype does not include a company manual
-corpus, conversation memory, dedicated image search or a new diagnostic loop.
+corpus, a general conversation-memory system, dedicated image search or a new diagnostic loop.
 
 ## Run with a real photo
 
@@ -101,6 +101,29 @@ not verified here. Telephony currently uses `chert dev` with caller video unveri
 If no camera track arrives, use the team's HTTPS `/phone` path for camera testing.
 The worker publishes the guide card before opening a voice session, and slow
 intelligence stays outside call acceptance. No new screen endpoint or DTO is needed.
+
+## Sequential connection guidance
+
+`ObserveRequest` and `FixRequest` optionally accept `referenceJpegs: Buffer[]` (at most
+two earlier upright JPEGs, max 1280 px each). Both providers send the current `jpeg`
+as image 1, followed by those earlier views. References help identify a connector
+that has moved out of view; current connection state and target coordinates must
+come from image 1. Do not pass future frames, expected answers, or old coordinates.
+
+The live per-call bridge retains the first and most recent usable earlier views,
+passes the same reference set through observation and diagnosis, and supplies
+references for fresh step annotation. It clears this context on missing video or
+analysis failure. Reference bytes never enter CallState/events. This bounded memory
+is per call, not a persistent device library. The single-photo CLI runner and other
+callers remain backward compatible; the iMessage route must opt in to references
+separately before it gains this sequential behavior.
+
+For connection/repositioning tasks, the first plan step names the destination and
+a visible landmark. Annotation circles that destination socket rather than the
+misplaced connector or hand. A pure removal/inspection task may still circle the
+connector. If the destination is not visible, return no target and request a useful
+view. Never copy a box between camera angles. These are model instructions, not a
+geometric correctness guarantee; inspect replay output on the actual device.
 
 ## Bridge behavior
 

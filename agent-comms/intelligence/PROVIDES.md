@@ -31,13 +31,20 @@ Original images/results remain local; they contain personal screen content.
 ## Agent to intelligence
 
 ```ts
-observe({ jpeg, focus?, step?, previous? }): Promise<Observation>
-findFix({ jpeg, observation, symptom }): Promise<FixPlan>
+observe({ jpeg, referenceJpegs?, focus?, step?, previous? }): Promise<Observation>
+findFix({ jpeg, referenceJpegs?, observation, symptom }): Promise<FixPlan>
 ```
 
 - `jpeg` is a nonempty, upright JPEG `Buffer`, max 1280 px, not a URL or an image
   description. `findFix` requires the **same frame used for its observation**.
   Required `FixRequest.jpeg` is implemented on main.
+- Optional `referenceJpegs` contains at most two earlier upright JPEG Buffers. Both
+  providers receive current image first, earlier references after. The live bridge
+  supplies first/latest prior views privately; missing video or failures reset them.
+  Other callers (including iMessage) must opt in; no automatic cross-session memory.
+- For connection corrections, target the destination socket in the current frame,
+  not the misplaced connector. Never carry coordinates across frames. Pure
+  disconnect/inspection tasks can still target the connector itself.
 - `observe` reports current visible device, lights, ports, findings, next view,
   confidence, and optional target. `previous` supplies context, not current facts.
 - `findFix` receives the image itself plus observation and symptom, retrieves

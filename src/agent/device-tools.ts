@@ -9,6 +9,7 @@ export function createDeviceTools({ intelligence, state, grabJpeg, snapshot, emi
   emit: () => Promise<void>;
 }) {
   let latestLook: Omit<FixRequest, 'symptom'> | undefined;
+  let referenceFrames: Buffer[] = []; // First and latest usable earlier views, private to this call.
   let queue: Promise<unknown> = Promise.resolve();
   const clearImage = () => {
     latestLook = undefined;
@@ -18,14 +19,19 @@ export function createDeviceTools({ intelligence, state, grabJpeg, snapshot, emi
   const noVideo = { device_visible: false, error: 'No current camera frame. Ask for a live camera view; do not describe a port or claim a circle is shown.' };
   const look = async (focus: string, selectedStep = state.step) => {
     const previous = state.observation;
+    const referenceJpegs = referenceFrames.slice();
     clearImage();
     state.step = undefined;
     await emit();
     const jpeg = await grabJpeg();
-    if (!jpeg) { state.step = undefined; state.stage = 'waiting'; await emit(); return null; }
+    if (!jpeg) { referenceFrames = []; state.step = undefined; state.stage = 'waiting'; await emit(); return null; }
     const image = await snapshot(jpeg);
-    const observation = await intelligence.observe({ jpeg, focus, step: selectedStep?.text, previous });
-    latestLook = { jpeg, observation };
+    const observation = await intelligence.observe({ jpeg, focus, step: selectedStep?.text, previous, referenceJpegs });
+    latestLook = { jpeg, observation, referenceJpegs };
+    if (observation.device_visible) {
+      const first = referenceFrames[0] ?? jpeg;
+      referenceFrames = first.equals(jpeg) ? [first] : [first, jpeg];
+    }
     state.step = selectedStep;
     state.lastSnapshot = image;
     state.observation = observation;
@@ -38,7 +44,7 @@ export function createDeviceTools({ intelligence, state, grabJpeg, snapshot, emi
       try { return await work(); }
       catch {
         // Do not expose provider output/secrets or leave an old circle under a new step.
-        clearImage(); state.step = undefined; state.plan = undefined; state.stage = 'waiting';
+        referenceFrames = []; clearImage(); state.step = undefined; state.plan = undefined; state.stage = 'waiting';
         await emit();
         return { error: 'Device analysis failed or timed out. Tell the caller, then ask to retry with a clear view. No diagnosis or repair has been verified.' };
       }

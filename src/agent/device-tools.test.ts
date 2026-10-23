@@ -49,3 +49,18 @@ test('a new camera angle preserves the plan so the caller can continue to a late
  await bridge.lookAtDevice('ports');await bridge.findFix('help');await bridge.lookAtDevice('other side');
  assert.equal(state.plan,twoSteps);assert.ok(!('error' in await bridge.showStep(2)));assert.equal(state.step?.text,'Show connector');
 });
+
+test('sequential turns retain first and latest earlier photos privately, and reset after missing video',async()=>{
+ const calls:any[]=[];
+ const intel:Intelligence={observe:async req=>{calls.push({kind:'observe',...req});return observation;},findFix:async req=>{calls.push({kind:'fix',...req});return plan;}};
+ const frames:(Buffer|null)[]=['connector','wrong-side','right-side','misplaced'].map(s=>Buffer.from(s));
+ frames.push(null,Buffer.from('new-device'));
+ const {bridge,emitted}=setup(intel,frames);
+ for(const focus of ['connector','wrong-side','right-side','misplaced']) {await bridge.lookAtDevice(focus);await bridge.findFix('connect cable');}
+ const contexts=calls.filter(c=>c.kind==='observe').map(c=>(c.referenceJpegs??[]).map((b:Buffer)=>b.toString()));
+ assert.deepEqual(contexts,[[],['connector'],['connector','wrong-side'],['connector','right-side']]);
+ assert.deepEqual(calls.filter(c=>c.kind==='fix').map(c=>(c.referenceJpegs??[]).map((b:Buffer)=>b.toString())),contexts);
+ assert.ok(!JSON.stringify(emitted).includes('referenceJpegs'));
+ await bridge.lookAtDevice('missing');await bridge.lookAtDevice('new-device');
+ assert.deepEqual(calls.at(-1).referenceJpegs??[],[]);
+});

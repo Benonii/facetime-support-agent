@@ -50,7 +50,7 @@ test('unseen devices ask for a usable view without external calls', async () => 
   } finally { globalThis.fetch = original; }
 });
 
-test('diagnosis rejects a missing or empty image before any external call', async () => {
+test('diagnosis rejects invalid current/reference images before any external call', async () => {
   const original = globalThis.fetch;
   let calls = 0;
   globalThis.fetch = async () => { calls++; throw new Error('No network allowed'); };
@@ -58,6 +58,9 @@ test('diagnosis rejects a missing or empty image before any external call', asyn
     // @ts-expect-error The required image must also be enforced at compile time.
     await assert.rejects(findFix({ observation, symptom: 'offline' }), /jpeg.*non-empty Buffer/i);
     await assert.rejects(findFix({ jpeg: Buffer.alloc(0), observation, symptom: 'offline' }), /jpeg.*non-empty Buffer/i);
+    for (const referenceJpegs of [[Buffer.alloc(0)], [jpeg,jpeg,jpeg]]) {
+      await assert.rejects(findFix({jpeg,observation,symptom:'offline',referenceJpegs}), /referenceJpegs/);
+    }
     assert.equal(calls, 0);
   } finally { globalThis.fetch = original; }
 });
@@ -81,7 +84,7 @@ test('diagnosis sends the exact image and symptom to the model', async () => {
     });
   };
   try {
-    assert.deepEqual(await findFix({ jpeg, observation, symptom: 'offline since this morning' }), plan);
+    assert.deepEqual(await findFix({ jpeg, observation, symptom: 'offline since this morning', referenceJpegs: [Buffer.from('earlier-connector')] }), plan);
     assert.equal(requests.length, 1);
     const input = requests[0].input;
     assert.ok(Array.isArray(input), 'Diagnosis must send multimodal input, not text alone');
@@ -90,6 +93,7 @@ test('diagnosis sends the exact image and symptom to the model', async () => {
       type: 'input_image', image_url: `data:image/jpeg;base64,${jpeg.toString('base64')}`, detail: 'high',
     });
     assert.match(content.find((part: any) => part.type === 'input_text').text, /offline since this morning/);
+    assert.deepEqual(content.filter((part: any) => part.type === 'input_image').map((p: any) => p.image_url), [`data:image/jpeg;base64,${jpeg.toString('base64')}`, `data:image/jpeg;base64,${Buffer.from('earlier-connector').toString('base64')}`]);
   } finally {
     globalThis.fetch = originalFetch;
     if (originalKey === undefined) delete process.env.OPENAI_API_KEY;

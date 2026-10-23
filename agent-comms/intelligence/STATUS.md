@@ -1,5 +1,13 @@
 # Intelligence status (part 3, Nikhil)
 
+## 2026-10-23: destination-target correction verified on the five-photo sequence
+
+- Fixed root causes: vague connector text lost useful identity between camera angles; selecting the first generic withdraw step then circling the part to touch highlighted the misplaced cable. Added bounded earlier-image context to both transports/live bridge and destination-oriented connection planning/annotation. No device-specific destination or box coordinates added.
+- Actual new CLI sequence (`gpt-6.1-sol`, same processed photo hashes, no future frames/expected targets): asks for side; wrong-side frame asks opposite edge; correct-side frame instructs MagSafe connection and circles socket; misplaced attempt says move toward hinge and circles destination socket above connector; final image recognizes amber/attached state and requests seating/charging checks. Preview inspected: frame 3 box `[0.239,0.625,0.287,0.643]`, frame 4 `[0.461,0.442,0.494,0.47]`, on the socket, not the cable.
+- Verification: 21 focused intelligence/provider/demo/live-bridge tests pass and project typecheck passes. New reference-routing tests first failed on missing earlier images, then passed; invalid references fail before retrieval. Renderer unchanged; inspected actual generated previews. No broad telephony suite repeated.
+- Limits: one recorded sequence, not a reliability benchmark or live FaceTime/voice test. Turns took 25.7–46.1 s; CLI latency remains too high for natural conversation. Earlier-image support is optional; current iMessage caller does not retain/pass references yet. Private photos/results stay local.
+- Next for telephony/iMessage: pass up to two earlier upright JPEGs as `referenceJpegs` to observe, findFix, and annotation, excluding the current frame. Keep per-chat bounded storage and clear on conversation reset. Existing callers continue working without references; that does not gain sequential visual memory automatically.
+
 ## 2026-10-23: active sequential destination-target correction
 
 - Owner: intelligence (Nikhil's Codex), session `01a16a47-1bb3-7d90-b151-e703f0c1f1ff`, branch `intelligence-cli-demo`, based on main `277f5a7`.

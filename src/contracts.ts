@@ -57,6 +57,7 @@ export type FixPlan = z.infer<typeof FixPlan>;
 
 export interface ObserveRequest {
   jpeg: Buffer; // one camera frame, already rotated upright, max 1280 px
+  referenceJpegs?: Buffer[]; // max two earlier views, identity context only; boxes refer to jpeg
   focus?: string; // what the agent wants checked, e.g. "back ports"
   step?: string; // current fix step; when set, Observation.target must point at the part for it
   previous?: Observation; // notes from earlier frames to merge
@@ -64,6 +65,7 @@ export interface ObserveRequest {
 
 export interface FixRequest {
   jpeg: Buffer; // required upright JPEG (max 1280 px), the SAME frame used for observation
+  referenceJpegs?: Buffer[]; // max two earlier views; not evidence of the current connection state
   observation: Observation;
   symptom: string; // the customer's problem in their words
 }
