@@ -48,7 +48,7 @@ findFix({ jpeg, referenceJpegs?, observation, symptom }): Promise<FixPlan>
 - `observe` reports current visible device, lights, ports, findings, next view,
   confidence, and optional target. `previous` supplies context, not current facts.
 - `findFix` receives the image itself plus observation and symptom, retrieves
-  Keenable snippets in application code, and returns `likely_cause`, `steps`,
+  ranked, condensed Keenable evidence only for explicit research or a model-specific knowledge gap, and returns `likely_cause`, `steps`,
   `needs_technician_if`, and `sources: {title, url}[]`.
 - Plans contain at most six nonempty steps. Sources are restricted to retrieved
   URLs; this validates provenance, not whether each source supports a claim.

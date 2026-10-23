@@ -17,7 +17,7 @@ const BRAND = process.env.BRAND_NAME || 'Shure';
 const DEMO_PHOTO = process.env.DEMO_SCRIPT === '1'
   ? process.env.DEMO_PHOTO || fileURLToPath(new URL('../intelligence/products/demo-shure-muted.jpg', import.meta.url))
   : '';
-const intelligence = createIntelligence();
+const intelligence = createIntelligence(call => console.info('[intelligence]', JSON.stringify(call)));
 
 const INSTRUCTIONS = `You are Alex, a ${BRAND} customer support agent on a live video call. You are an AI; say so if asked.
 You support ${BRAND} wireless microphones: the handheld transmitter (power button, status LED, LCD with battery bars,
@@ -42,7 +42,8 @@ How the call goes:
 6. While analysis runs, remain conversational. "Still there?" needs a brief reassurance, not another capture.
    Use cancel_analysis for an explicit stop. A different visual request replaces the pending one.
    Set newProblem true only for a different device or problem, not for another view of the same task.
-7. For an actual unresolved fault that needs a technician, use book_technician with their details.
+7. Use the camera and product notes first. If the caller explicitly asks to search online or consult a manual, include that request in analyze_device.question. Intelligence escalates web research only for that request or missing model-specific knowledge.
+8. For an actual unresolved fault that needs a technician, use book_technician with their details.
 
 Style: calm, warm, quick. One or two short sentences per turn. Never read JSON aloud. Never say
 "contact your provider": you ARE the provider. Never claim to see something the tools did not report.

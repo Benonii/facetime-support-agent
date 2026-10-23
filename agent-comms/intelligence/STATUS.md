@@ -1,5 +1,19 @@
 # Intelligence status (part 3, Nikhil)
 
+## 2026-10-23: PR12 merge reconciliation
+- Preserved the latest on-demand search gate: first draft uses photo/KB, blank search_query skips retrieval. Explicit research/missing model knowledge invokes the compact research pipeline once; useful evidence revises the draft, empty/unavailable evidence retains it with no citations. No raw snippets reach diagnosis.
+- Preserved model/visual timing logs, voice behavior and scripted demo. Research remains capped at 15s total. Conflict resolution is in an isolated checkout; no running worker restarted.
+
+## 2026-10-23: demand-driven search implemented
+- Planning uses the current photo and product notes first; its private search_query requests at most one lookup for explicit caller research or missing model-specific instructions. Empty/failed search keeps the safe draft. No shared DTO changes, new voice tool, or frontend edits. Shure scripted mode remains unchanged.
+- Added model duration and visual phase logs. 12 focused intelligence/controller tests pass; typecheck passes. Actual CLI IMG_1051 replay skipped search and returned correct destination guidance in 24.4s (observe 10.5s, plan 6.2s, target 7.5s). This is still slow for conversation; removing search alone does not remove model latency.
+- Isolated support-test-nikhil worker restarted for the next handheld run. Current prior call had repeated Realtime response collisions/interruptions; their cause is not established by this change. New timing logs distinguish capture, inference and publication from voice delivery.
+
+## 2026-10-23: live latency investigation
+- Nikhil requests web search on demand rather than every diagnosis. Implementing a local-first plan with optional internal search escalation and model/visual phase timings. Preserve the existing shared DTOs, frontend, and scripted Shure demo.
+- Current phone call shows repeated Realtime interruptions/active-response collisions; existing logs do not expose individual inference timings. No claim that search explains the full wait.
+- Next: focused search routing tests, one actual image timing, restart isolated support-test-nikhil worker.
+
 ## 2026-10-23: product research evidence briefs implemented
 - Owner: Keenable research integration, branch `codex/product-research`, baseline `9a450ec`. Nikhil approved the pipeline and requested quick hackathon functionality.
 - `findFix` now invokes general product research: four parallel Keenable searches -> deduplicated Decisions relevance -> up to four fetched pages -> compact Responses evidence brief. Arbitrary product/model/symptom inputs; no Apple-specific retrieval logic. Existing JPEG/reference/provider/KB/voice/screen contracts preserved.

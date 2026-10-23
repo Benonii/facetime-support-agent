@@ -147,7 +147,7 @@ This is a local demo integration, not a public inference service.
 
 For OpenAI, put `OPENAI_API_KEY` in gitignored `.env.local`. `VISION_MODEL` defaults
 to `gpt-5`; `EXTRACT_MODEL` to `gpt-5-mini`. Both providers use application-side
-Keenable retrieval (`KEENABLE_API_KEY` optional; public endpoint otherwise).
+Keenable retrieval only when requested or needed (`KEENABLE_API_KEY` optional; public endpoint otherwise).
 CLI does not replace the separate OpenAI Realtime voice session.
 
 The runner rotates/resizes the input once, then supplies the same processed JPEG
@@ -253,7 +253,11 @@ geometric correctness guarantee; inspect replay output on the actual device.
 - `findFix` requires a nonempty JPEG Buffer, even for an invisible observation.
   It sends the image itself to the diagnosis model alongside observation/symptom.
   The boundary checks presence/type, not JPEG decoding; callers supply valid JPEGs.
-- `findFix` calls `researchProduct` with device, symptom, relevant findings/ports/lights
+- `findFix` first plans from the current photo and matching product knowledge. Its
+  private `search_query` is empty for routine visual guidance; explicit caller research
+  or a missing model-specific procedure requests one research pass. Unclear images
+  require another view, not search. This uses the existing planning call, not a new gate call.
+- When requested, `findFix` calls `researchProduct` with the focused query, symptom, device, findings/ports/lights
   and explicit model uncertainty. Four parallel Keenable searches cover official
   support/manuals, specs, Reddit and other forums (four results each). No images go
   to search. The internal request accepts an optional verified manufacturer domain;
@@ -265,6 +269,9 @@ geometric correctness guarantee; inspect replay output on the actual device.
   applicability gaps, contradictions and coverage limitations, <=6000 serialized
   characters. Manufacturer guidance/specs are distinguished from community reports.
   Unknown/invented citation IDs and oversized summaries produce an unavailable report.
+- Empty/unavailable research retains the safe local draft with no citations or second
+  diagnosis call. A useful brief gets one `researched_fix_plan` call using the same images.
+  Existing model/visual phase timing logs are preserved.
 - Research has a 15-second total deadline: search <=4s, ranking <=2s, page fetch <=4s,
   synthesis uses the remaining time. No automatic retries. Partial fetch failures use
   ranked excerpts with explicit limitations. No useful evidence is distinct from

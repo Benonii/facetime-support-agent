@@ -80,7 +80,7 @@ test('diagnosis sends the exact image and symptom to the model', async () => {
       id: 'resp_test', object: 'response', created_at: 0, status: 'completed',
       model: 'test-model', error: null, incomplete_details: null,
       output: [{ type: 'message', id: 'msg_test', role: 'assistant', status: 'completed',
-        content: [{ type: 'output_text', text: JSON.stringify(plan), annotations: [], logprobs: [] }] }],
+        content: [{ type: 'output_text', text: JSON.stringify({...plan,search_query:''}), annotations: [], logprobs: [] }] }],
     });
   };
   try {
@@ -107,7 +107,7 @@ test('diagnosis consumes only the processed brief and cites only its sources', a
   const plan = await findFix({ jpeg, observation, symptom: 'connector does not fit' }, async req => {
     prompt = req.text;
     assert.equal(req.jpeg, jpeg);
-    return req.schema.parse({ likely_cause: 'Connector mismatch needs confirmation', steps: ['Show the connector'],
+    return req.schema.parse({ search_query: req.name === 'fix_plan' ? 'Apple connector compatibility' : '', likely_cause: 'Connector mismatch needs confirmation', steps: ['Show the connector'],
       needs_technician_if: 'Visible damage', sources: [source, { title: 'Invented', url: 'https://example.com/unseen' }] });
   }, async req => {
     assert.match(req.question, /connector does not fit/);
@@ -134,4 +134,36 @@ test('plan drops invented sources and caps guidance at six nonempty steps', () =
   assert.deepEqual(plan.sources, [source]);
   assert.equal(plan.steps.length, 6);
   assert.equal(plan.steps[0], 'Connect WAN');
+});
+
+test('routine visual guidance skips research; explicit research and knowledge gaps escalate once', async () => {
+  const source = {id:'s1',title:'Manufacturer manual',url:'https://example.com/manual',coverage:'page' as const};
+  let searches = 0;
+  const research: typeof import('./research.js').researchProduct = async req => {
+    searches++;
+    assert.match(req.question, /Example R1 official pairing instructions/);
+    return {status:'evidence_found',findings:[{text:'Pairing fact',kind:'manufacturer_guidance',sourceIds:['s1']}],sources:[source],gaps:[],contradictions:[],limitations:[]};
+  };
+  const base = {likely_cause:'Visible connection',steps:['Connect the visible port'],needs_technician_if:'Still failing',sources:[]};
+  let calls = 0;
+  const local = await findFix({jpeg,observation,symptom:'Where does this plug go?'}, async r => {
+    calls++; return r.schema.parse({...base,search_query:''});
+  }, research);
+  assert.equal(searches,0); assert.equal(calls,1); assert.deepEqual(local,base);
+  for (const symptom of ['Search the manufacturer manual for pairing instructions','Pairing is still failing; the local notes do not cover this model']) {
+    calls=0;
+    const researched = await findFix({jpeg,observation,symptom}, async r => {
+      calls++;
+      return r.schema.parse(calls===1 ? {...base,search_query:'Example R1 official pairing instructions'} : {...base,sources:[source]});
+    }, research);
+    assert.equal(calls,2); assert.deepEqual(researched.sources,[{title:source.title,url:source.url}]);
+  }
+  assert.equal(searches,2);
+  for (const status of ['unavailable','nothing_relevant'] as const) {
+    calls=0;
+    const fallback=await findFix({jpeg,observation,symptom:'Look up the manual'},async r=>{
+      calls++;return r.schema.parse({...base,search_query:'Example R1 manual'});
+    },async()=>({status,findings:[],sources:[],gaps:[],contradictions:[],limitations:['No usable research']}));
+    assert.equal(calls,1);assert.deepEqual(fallback,base);
+  }
 });
