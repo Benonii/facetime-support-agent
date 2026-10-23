@@ -1,5 +1,11 @@
 # Telephony status
 
+## 2026-10-23 3:20 PM PT: demo path is now our own web call PWA (`/phone`), Chert dropped
+- **Why:** Chert inbound still "unavailable". Ben chose our own frontend into LiveKit.
+- **Done:** `/phone` call app (voice ring reacting to the agent's audio, Look/Diagnose/Fix/Done progress from `/api/stream`, mute, flip, hang up, iOS audio unlock, wake lock), installable PWA (manifest, icons, service worker). `/api/dev-session` takes the warm room and returns the agent's `callId`; `/api/dev-session/end` deletes the room. 17/17 tests; flow checked in headless Chromium with a stubbed LiveKit client.
+- **Answers SCR-001:** visual acceptance runs over `/phone`. Same track names, so no agent or screens change.
+- **Not verified yet:** a real phone over the tunnel with the real agent.
+
 ## 2026-10-23 3:15 PM PT: demo path switched to web call (`/phone`), Chert dropped
 - **Why:** Chert inbound calls still "unavailable". Ben chose our own web frontend into LiveKit.
 - **Done:** `/phone` is now a real call page (call button, agent video full screen, self view, mute, flip, hang up, iPhone audio unlock, screen wake lock). `/api/dev-session` takes the warm room; new `/api/dev-session/end` deletes the room on hang-up. 17/17 telephony tests; page flow checked in headless Chromium with a stubbed LiveKit client.

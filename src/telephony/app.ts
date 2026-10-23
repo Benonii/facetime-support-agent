@@ -23,6 +23,7 @@ export interface TelephonyConfig {
 interface Prepared {
   room: string;
   agentIdentity: string;
+  callId: string; // the JobMetadata.call_id the agent uses in its CallEvents
 }
 
 const STAGES = ['waiting', 'looking', 'diagnosing', 'guiding', 'resolved', 'technician'];
@@ -56,7 +57,7 @@ export function createTelephony(lk: LiveKitOps, cfg: TelephonyConfig) {
     });
     while (Date.now() < deadline && !stopped) {
       const agentIdentity = await lk.readyAgent(room);
-      if (agentIdentity) return { room, agentIdentity };
+      if (agentIdentity) return { room, agentIdentity, callId };
       await sleep(pollMs);
     }
     lk.deleteRoom(room).catch(() => {});
@@ -154,6 +155,9 @@ export function createTelephony(lk: LiveKitOps, cfg: TelephonyConfig) {
   const page = (f: string) => readFileSync(new URL(`../../public/${f}`, import.meta.url), 'utf8');
 
   app.get('/', (c) => c.html(page('dashboard.html').replace('__TRUCK_ROLL_COST__', String(cfg.truckRollCost))));
+  app.get('/manifest.webmanifest', (c) => c.body(page('manifest.webmanifest').replaceAll('__BRAND__', cfg.brandName ?? 'Lumen Fiber'), 200, { 'Content-Type': 'application/manifest+json' }));
+  app.get('/sw.js', (c) => c.body(page('sw.js'), 200, { 'Content-Type': 'text/javascript', 'Cache-Control': 'no-cache' }));
+  app.get('/icons/:f{[a-z0-9-]+\\.png}', (c) => c.body(readFileSync(new URL(`../../public/icons/${c.req.param('f')}`, import.meta.url)), 200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' }));
   app.get('/phone', (c) => c.html(page('dev-phone.html').replaceAll('__BRAND__', cfg.brandName ?? 'Lumen Fiber')));
   app.get('/health', (c) => c.json({ ok: true, warm_room_ready: warmReady, active_calls: seen.size }));
 
@@ -210,7 +214,7 @@ export function createTelephony(lk: LiveKitOps, cfg: TelephonyConfig) {
       const token = await mintToken(cfg.apiKey, cfg.apiSecret, prepared.room, `caller-${callId.slice(4, 10)}`, 1800);
       webRooms.add(prepared.room);
       log(`[web] call ${prepared.room} ready in ${Date.now() - t0} ms`);
-      return c.json({ url: cfg.livekitUrl, token, room: prepared.room, callId });
+      return c.json({ url: cfg.livekitUrl, token, room: prepared.room, callId: prepared.callId });
     } catch (e) {
       log(`[web] call failed after ${Date.now() - t0} ms: ${(e as Error).message}`);
       return c.json({ error: (e as Error).message }, 503);
