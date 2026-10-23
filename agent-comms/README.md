@@ -23,5 +23,5 @@ updating their `PROVIDES.md` (or `STATUS.md`) and noting it under your item in t
 
 **Rules**
 - DTOs live in `src/contracts.ts`. If an ask changes a DTO, say so in the ask. Change contracts.ts first, in its own PR.
-- Never push to main. Commit agent-comms changes in a PR (can be the same PR as your code).
+- `agent-comms/` changes go straight to main (pull first, edit only your folder). Code still goes through PRs, never main.
 - Keep items short and concrete: what, why, the exact shape, by when.
