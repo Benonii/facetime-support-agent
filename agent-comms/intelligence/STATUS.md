@@ -1,6 +1,7 @@
 # Intelligence status (part 3, Nikhil)
 
-## 2026-10-23: voice → intelligence interface implemented (hackathon slice)
+## 2026-10-23: voice → intelligence interface landed (hackathon slice)
+- [PR #11](https://github.com/Benonii/facetime-support-agent/pull/11) merged. Source implementation 15dcd0c; restart the agreed worker after pulling main.
 - New composite analyze_device starts capture at verbal tool invocation, acknowledges through LiveKit ctx.update, gives one 15s reminder, uses one JPEG for observe/plan/annotation, and returns the instruction to Realtime for speech. Follow-up ready/next/verify and explicit stop are wired. Existing CallState + ScreenCue send matching images to /phone and GuideCard; no shared contract changes.
 - Preserved Ben’s greeting/brand/KB/frontend. INT-014 frontend guard landed independently in fe80d11; later c6404a0 retains the dimmed photo while a new look is pending. No frontend files changed by this slice.
 - Focused checks: 4 new controller tests + 5 existing bridge tests pass; typecheck passes. One narrow read-only review found lost ticket evidence on cancel, fixed before capture of diagnosis. No broad suite per Nikhil’s hackathon instruction.
