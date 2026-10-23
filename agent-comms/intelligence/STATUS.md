@@ -1,5 +1,15 @@
 # Intelligence status (part 3, Nikhil)
 
+## 2026-10-23: FaceTime blocker audit after telephony acknowledgment
+
+- Fetched `7032784`: Ben acknowledges `intelligence-demo`, but keeps the line on `support-agent` until the intended worker registers. PR #9 (`42256c3`, still open at inspection) adds HTTP/webhook logging after calls showed "unavailable"; it is instrumentation, not a verified call fix.
+- **Correction:** current [Chert beta.10 docs](https://docs.trychert.com/facetime-cli/video) support inbound video through `chert dev` without a webhook. Corrected stale `CONTEXT.md` guidance. The shared-line Integration URL 404 blocks the webhook setup, not necessarily CLI video. Line video and caller-capture enablement still require confirmation.
+- **Local evidence:** original product `.env.local` has LiveKit credentials but no nonempty `OPENAI_API_KEY`; `AGENT_NAME` remains `support-agent`. No local listener on 8787 at inspection. These are observations of Nikhil's machine, not Ben's runtime. No worker, server, or connector started or stopped by this audit.
+- Our agent already subscribes to video and manually grabs frames. `session.inputOptions.videoEnabled: false` disables direct Realtime video input, not our image-tool path; do not flip it as a speculative fix. A published GuideCard alone is not proof of Chert audio readiness.
+- **Next evidence from telephony/voice:** one failed call's timestamp, Chert connector readiness/error lines, worker registration/job/error lines, and whether the bridge participant appeared. Keep secrets out. If connection works, confirm `[frames] reading video` plus changing camera observations and returned GuideCard video. A green plain `doctor` does not prove the named agent or a conversation.
+- Configure voice API access on the agreed worker machine; register exactly `intelligence-demo` in the same LiveKit project before Ben switches the connector. For an independent camera/voice proof, use `/phone` with server + HTTPS tunnel + matching worker name. This fallback also needs voice credentials; it does not validate FaceTime.
+- Documentation-only audit and handoff. No new runtime verification or claim that the "unavailable" root cause is identified.
+
 ## 2026-10-23: presentation ownership handed to screens and voice
 
 - Nikhil explicitly requested a message and repo handoff so the other owners can make the intelligence results clear and attractive. Published [SCREENS-VOICE-HANDOFF.md](SCREENS-VOICE-HANDOFF.md), with exact fields, examples, verified cases, renderer constraints, and live setup limits.

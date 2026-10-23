@@ -14,6 +14,12 @@ technician with the diagnosis attached. Business pitch: every fix on the call is
 
 ## Architecture
 
+The diagram below describes the webhook route. The team currently uses
+`chert dev --agent NAME`, which prepares rooms and dispatches the agent without
+calling our webhook. Current Chert beta.10 documentation supports inbound audio
+and video on that route; actual media delivery on our assigned line is still
+unverified. See the latest `agent-comms/telephony/STATUS.md` for the running route.
+
 ```
 Customer iPhone ──FaceTime Video──▶ Chert line
                                       │ 1. POST call.incoming  (HTTPS webhook)
@@ -42,7 +48,7 @@ Chert bridge joins the LiveKit room ◀─────────────�
 
 ## Hard facts and rules (easy to get wrong)
 
-1. **Caller video only arrives through Chert BYOR** (webhook mode, line policy `customer_decides`). The `chert dev` CLI is audio only. The open-source connector is audio only.
+1. **Inbound video is supported by `chert dev` and `chert byor`, without a webhook.** Use a video-enabled line with caller capture configured on its worker, call with FaceTime Video, and consume caller frames in our agent. There is no `chert dev --video` flag. The voice starter and legacy `create-room` adapter are audio-only; that limitation does not apply to `dev`. Verified against [current Chert video guidance](https://docs.trychert.com/facetime-cli/video) on 2026-10-23. Support in the docs does not prove our assigned line is configured or delivering video.
 2. **Outbound calls (agent calls customer) are audio only.** Our flow is inbound.
 3. **The webhook must answer within ~5 s** (we budget 4 s from `created_at`). Missing/late = call declined. That's why the warm room exists. Never do slow work in the webhook.
 4. **The agent must already be in the room** before we answer "accept".
