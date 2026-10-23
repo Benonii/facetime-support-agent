@@ -115,10 +115,15 @@ Same flow as Step 3 with `focus: "back ports"` and `previous` set to the first O
 The realtime model calls `find_fix` with `symptom: "internet stopped working"`. Part 2 sends Part 3 a **FixRequest**:
 
 ```json
-{ "observation": { "…": "the latest Observation" }, "symptom": "internet stopped working" }
+{ "jpeg": "<Buffer: same upright JPEG used for this observation>",
+  "observation": { "…": "the latest Observation" }, "symptom": "internet stopped working" }
 ```
 
-Part 3 checks the PLAYBOOK for the FX-200, runs a Keenable web search, and has gpt-5-mini combine them into a **FixPlan**:
+The JPEG above represents real Buffer bytes in the in-process call, not a string.
+Part 2 keeps the image and its observation paired. Part 3 sends the image itself to
+gpt-5-mini along with the observation, symptom, generic router PLAYBOOK and Keenable
+search results to produce a **FixPlan**. This walkthrough's device, sources and
+outcome are illustrative; the generic PLAYBOOK is not an FX-200 manual.
 
 ```json
 { "likely_cause": "WAN cable unplugged, so the router has no line from the fiber box",

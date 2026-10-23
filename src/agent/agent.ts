@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { AutoSubscribe, cli, defineAgent, llm, ServerOptions, voice } from '@livekit/agents';
 import { realtime } from '@livekit/agents-plugin-openai';
 import { z } from 'zod';
-import type { CallEvent, CallState, JobMetadata } from '../contracts.js';
+import type { CallEvent, CallState, FixRequest, JobMetadata } from '../contracts.js';
 import { createIntelligence } from '../intelligence/index.js';
 import { GuideCard } from '../screens/card.js';
 import { FrameGrabber, thumb } from './frames.js';
@@ -52,18 +52,20 @@ export default defineAgent({
     const caller = await ctx.waitForParticipant();
     post({ type: 'call.started', callId });
     const frames = new FrameGrabber(ctx.room);
+    // Keep raw image bytes private to this call, paired with their exact observation.
+    let latestLook: Omit<FixRequest, 'symptom'> | undefined;
 
     /** Grab a frame, update the snapshot on screen, and read it with the vision model. */
     const look = async (focus: string) => {
+      latestLook = undefined;
       const jpeg = await frames.grabJpeg();
       if (!jpeg) return null;
-      state.lastSnapshot = await thumb(jpeg, 640);
-      await emit();
+      const snapshot = await thumb(jpeg, 640);
       const obs = await intelligence.observe({ jpeg, focus, step: state.step?.text, previous: state.observation });
-      if (obs.device_visible) {
-        state.observation = obs;
-        state.looks++;
-      }
+      latestLook = { jpeg, observation: obs };
+      state.lastSnapshot = snapshot;
+      state.observation = obs;
+      if (obs.device_visible) state.looks++;
       await emit();
       return obs;
     };
@@ -88,10 +90,11 @@ export default defineAgent({
         description: 'Build a step-by-step fix plan from what was seen plus the manual and web results for this model.',
         parameters: z.object({ symptom: z.string().describe("the customer's problem in their words") }),
         execute: async ({ symptom }) => {
-          if (!state.observation) return { error: 'Look at the device first with look_at_device.' };
+          const observed = latestLook;
+          if (!observed) return { error: 'Look at the device first with look_at_device to capture an image.' };
           state.stage = 'diagnosing';
           await emit();
-          state.plan = await intelligence.findFix({ observation: state.observation, symptom });
+          state.plan = await intelligence.findFix({ ...observed, symptom });
           state.stage = 'guiding';
           await emit();
           return state.plan;

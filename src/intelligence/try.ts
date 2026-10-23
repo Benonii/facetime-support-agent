@@ -13,5 +13,5 @@ const observation = await intel.observe({ jpeg, step });
 console.timeEnd('observe');
 console.log(JSON.stringify(observation, null, 2));
 console.time('findFix');
-console.log(JSON.stringify(await intel.findFix({ observation, symptom }), null, 2));
+console.log(JSON.stringify(await intel.findFix({ jpeg, observation, symptom }), null, 2));
 console.timeEnd('findFix');

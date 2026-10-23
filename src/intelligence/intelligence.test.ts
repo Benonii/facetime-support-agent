@@ -4,6 +4,9 @@ import type { Observation } from '../contracts.js';
 import { normalizeObservation } from './vision.js';
 import { findFix, groundPlan, searchQuery } from './kb.js';
 
+// Transport fixture only; no claim that these bytes depict a real device.
+const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xd9]);
+
 const observation: Observation = {
   device_visible: true,
   device: { type: 'router', brand: 'Example', model: 'R1' },
@@ -38,13 +41,60 @@ test('unseen devices ask for a usable view without external calls', async () => 
   let calls = 0;
   globalThis.fetch = async () => { calls++; throw new Error('No network allowed'); };
   try {
-    const plan = await findFix({ observation: { ...observation, device_visible: false }, symptom: 'offline' });
+    const plan = await findFix({ jpeg, observation: { ...observation, device_visible: false }, symptom: 'offline' });
     assert.equal(calls, 0);
     assert.equal(plan.steps.length, 1);
     assert.match(plan.steps[0], /camera|view|photo/i);
     assert.deepEqual(plan.sources, []);
     assert.doesNotMatch(plan.likely_cause, /unplugged/i);
   } finally { globalThis.fetch = original; }
+});
+
+test('diagnosis rejects a missing or empty image before any external call', async () => {
+  const original = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => { calls++; throw new Error('No network allowed'); };
+  try {
+    // @ts-expect-error The required image must also be enforced at compile time.
+    await assert.rejects(findFix({ observation, symptom: 'offline' }), /jpeg.*non-empty Buffer/i);
+    await assert.rejects(findFix({ jpeg: Buffer.alloc(0), observation, symptom: 'offline' }), /jpeg.*non-empty Buffer/i);
+    assert.equal(calls, 0);
+  } finally { globalThis.fetch = original; }
+});
+
+test('diagnosis sends the exact image and symptom to the model', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalKey = process.env.OPENAI_API_KEY;
+  process.env.OPENAI_API_KEY = 'test-only-not-a-real-key';
+  const requests: Record<string, any>[] = [];
+  const plan = { likely_cause: 'WAN disconnected', steps: ['Check WAN cable'], needs_technician_if: 'Still offline', sources: [] };
+  globalThis.fetch = async (input, init) => {
+    const url = String(input instanceof Request ? input.url : input);
+    if (url.startsWith('https://api.keenable.ai/')) return Response.json({ results: [] });
+    assert.ok(url.endsWith('/responses'), 'Unexpected external endpoint');
+    requests.push(JSON.parse(String(init?.body)));
+    return Response.json({
+      id: 'resp_test', object: 'response', created_at: 0, status: 'completed',
+      model: 'test-model', error: null, incomplete_details: null,
+      output: [{ type: 'message', id: 'msg_test', role: 'assistant', status: 'completed',
+        content: [{ type: 'output_text', text: JSON.stringify(plan), annotations: [], logprobs: [] }] }],
+    });
+  };
+  try {
+    assert.deepEqual(await findFix({ jpeg, observation, symptom: 'offline since this morning' }), plan);
+    assert.equal(requests.length, 1);
+    const input = requests[0].input;
+    assert.ok(Array.isArray(input), 'Diagnosis must send multimodal input, not text alone');
+    const content = input.flatMap((message: any) => message.content);
+    assert.deepEqual(content.find((part: any) => part.type === 'input_image'), {
+      type: 'input_image', image_url: `data:image/jpeg;base64,${jpeg.toString('base64')}`, detail: 'high',
+    });
+    assert.match(content.find((part: any) => part.type === 'input_text').text, /offline since this morning/);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalKey === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = originalKey;
+  }
 });
 
 test('retrieval includes the caller symptom and observed device', () => {

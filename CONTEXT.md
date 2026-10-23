@@ -80,11 +80,18 @@ All DTOs live in **`src/contracts.ts`**. That file is the only thing parts share
 **2 to 3: `Intelligence` interface**
 ```ts
 observe(req: ObserveRequest): Promise<Observation>   // ObserveRequest { jpeg: Buffer; focus?; step?; previous?: Observation }
-findFix(req: FixRequest): Promise<FixPlan>           // FixRequest { observation; symptom }
+findFix(req: FixRequest): Promise<FixPlan>           // FixRequest { jpeg: Buffer; observation; symptom }
 ```
 `Observation`: `device_visible`, `device {type, brand, model}`, `indicators[] {label, color, pattern}`,
 `ports[] {label, cable_connected}`, `findings[]`, `target {label, box:[x0,y0,x1,y1] 0..1} | null`, `next_shot`, `confidence`.
 `FixPlan`: `likely_cause`, `steps[]`, `needs_technician`, sources. `MOCK_INTELLIGENCE=1` swaps in canned answers (`src/intelligence/mock.ts`).
+
+Both intelligence calls receive image bytes. `FixRequest.jpeg` is required and must
+be the same upright JPEG used to produce its observation. The agent retains that
+pair privately per call; raw Buffers do not go in CallState or dashboard events.
+`findFix` sends the photo to the diagnosis model as `input_image`, alongside the
+symptom, observation and retrieved snippets. Missing/empty Buffers are rejected
+before search or model calls. Image/observation screen updates are published together.
 
 **2 to 4: `CallerScreen` interface + `CallState`**
 ```ts

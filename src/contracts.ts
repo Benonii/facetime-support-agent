@@ -63,6 +63,7 @@ export interface ObserveRequest {
 }
 
 export interface FixRequest {
+  jpeg: Buffer; // required upright JPEG (max 1280 px), the SAME frame used for observation
   observation: Observation;
   symptom: string; // the customer's problem in their words
 }

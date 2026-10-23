@@ -1,8 +1,9 @@
 # Intelligence prototype
 
 One camera frame plus the caller's symptom produces observations and a short fix
-plan. Uses the existing `Intelligence` interface in `src/contracts.ts`; agent and
-screen consumers need no changes. This prototype does not include a company manual
+plan. `FixRequest` in `src/contracts.ts` now requires `jpeg: Buffer` as well as the
+observation and symptom. Agent and CLI callers pass the same photo to both calls;
+screen output shapes are unchanged. This prototype does not include a company manual
 corpus, conversation memory, dedicated image search or a new diagnostic loop.
 
 ## Run with a real photo
@@ -30,14 +31,18 @@ canned integration data, not proof that a real device was understood or fixed.
   within `[0,1]` may produce a box. Invalid or invisible targets become `null`.
 - An invisible device produces empty indicators/ports and a request for a clear
   view. `findFix` skips external calls when given that invisible observation.
+- `findFix` requires a nonempty JPEG Buffer, even for an invisible observation.
+  It sends the image itself to the diagnosis model alongside observation/symptom.
+  The boundary checks presence/type, not JPEG decoding; callers supply valid JPEGs.
 - Search includes the device, symptom and lights. A search failure leaves the
   observed evidence and generic router guidance available; it is not a live manual.
 - Plans have at most six nonempty steps. Source URLs must have appeared in search;
   titles come from those results. This validates provenance, not semantic support.
 - The voice agent owns speech and `CallState`; screens render its snapshot/target.
-  Existing agent code retains its last visible observation and emits a snapshot
-  before new vision finishes. This module cannot prevent those stale-screen states;
-  they remain integration limitations for the agent/screens owners.
+  The agent retains raw JPEG and observation together per call, including invisible
+  observations. It updates the screen snapshot and observation together after vision
+  finishes. A missing frame or failed observation clears the pair available for
+  diagnosis; `find_fix` requests a new look instead of using an older pair.
 
 ## Focused checks
 
