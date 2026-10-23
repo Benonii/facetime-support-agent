@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#10233D" />
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#0d0d0d" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -13,135 +14,150 @@
 <link rel="icon" href="/icons/icon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500&display=swap" rel="stylesheet" />
 <title>__BRAND__ Video Support</title>
 <style>
   /*
-    Visual world: a field technician's work light. Cable-duct navy, a fiber-blue voice,
-    and the amber the technician uses to circle parts. Your camera is the stage; the
-    technician answers on top of it with a circled photo of your own device.
+    Look: agentglance (Lexend, light weights, a grey text ladder, no colour except what the call needs).
+    Layout: FaceTime. The technician's card fills the screen, you sit in a small corner tile, round controls
+    bottom-right, caller chip top-left. Loading / thinking pieces are beautifului.dev primitives (pixel-grid loader,
+    shimmer status text).
   */
   :root {
-    --duct: #10233D; --duct-2: #172E4D; --line: #26446B;
-    --paper: #EEF3F8; --mist: #9DB1C9;
-    --fiber: #7CC8FF; --amber: #FFB547; --ok: #5EE0A0; --stop: #FF6B5E;
+    --background: #ffffff; --surface: #f5f5f5; --raised: #ebebeb; --border: #e9e9e9;
+    --primary: #0d0d0d; --secondary: #5d5d5d; --tertiary: #6f6f6f; --faint: #8f8f8f;
+    --ink: #f5f5f5; --ink-2: #c9c9c9; --ink-3: #8f8f8f;       /* the same ladder, on video */
+    --glass: rgba(20, 20, 20, 0.55); --glass-2: rgba(255, 255, 255, 0.16);
+    --end: #ff3b30; --live: #34c759;
     --ease: cubic-bezier(0.16, 1, 0.3, 1);
     --safe-t: env(safe-area-inset-top); --safe-b: env(safe-area-inset-bottom);
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; height: 100%; background: var(--duct); color: var(--paper);
-    font: 16px/1.45 Figtree, -apple-system, system-ui, sans-serif; overflow: hidden; -webkit-font-smoothing: antialiased; }
+  html, body { margin: 0; height: 100%; background: var(--background); color: var(--primary);
+    font: 300 15px/1.5 Lexend, ui-sans-serif, system-ui, sans-serif; overflow: hidden; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
   button { font: inherit; color: inherit; cursor: pointer; }
-  button:focus-visible { outline: 3px solid var(--fiber); outline-offset: 3px; }
+  button:focus-visible { outline: 1px solid currentColor; outline-offset: 2px; }
   .screen { position: fixed; inset: 0; display: none; }
   .screen.on { display: flex; }
+  .tabular { font-variant-numeric: tabular-nums; }
 
-  /* ---------- Home ---------- */
-  #home { flex-direction: column; justify-content: space-between; padding: calc(28px + var(--safe-t)) 24px calc(28px + var(--safe-b));
-    background: radial-gradient(120% 70% at 50% 100%, #1B3A63 0%, var(--duct) 62%); }
-  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; color: var(--mist); }
-  .brand img { width: 28px; height: 28px; border-radius: 8px; }
-  .pitch h1 { font: 700 clamp(34px, 10vw, 46px)/1.02 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em; margin: 0 0 14px; max-width: 12ch; }
-  .pitch p { margin: 0; color: var(--mist); max-width: 34ch; font-size: 17px; }
-  .how { list-style: none; padding: 0; margin: 26px 0 0; display: grid; gap: 12px; counter-reset: s; }
-  .how li { counter-increment: s; display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: baseline; }
-  .how li::before { content: counter(s); font: 700 15px 'Bricolage Grotesque', sans-serif; color: var(--duct); background: var(--amber);
-    width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; transform: translateY(4px); }
+  /* ---------- Home: agentglance landing ---------- */
+  #home { flex-direction: column; justify-content: space-between; padding: calc(24px + var(--safe-t)) 24px calc(24px + var(--safe-b)); }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 400; font-size: 15px; color: var(--primary); }
+  .brand img { width: 24px; height: 24px; border-radius: 7px; }
+  .pitch { animation: row-arrive 360ms var(--ease) both; }
+  .pitch h1 { font-weight: 300; font-size: clamp(38px, 11vw, 48px); line-height: 1.08; letter-spacing: -0.02em; margin: 0 0 16px; max-width: 11ch; }
+  .pitch p { margin: 0; color: var(--secondary); max-width: 34ch; font-size: 17px; line-height: 1.5; }
+  .how { list-style: none; padding: 0; margin: 28px 0 0; display: grid; gap: 10px; counter-reset: s; }
+  .how li { counter-increment: s; display: grid; grid-template-columns: 24px 1fr; gap: 12px; align-items: baseline; color: var(--secondary); font-size: 15px; }
+  .how li::before { content: counter(s); font-size: 13px; color: var(--faint); font-variant-numeric: tabular-nums; }
   .dock { display: grid; justify-items: center; gap: 12px; }
-  #call { width: 100%; max-width: 420px; height: 64px; border: 0; border-radius: 20px; background: var(--fiber); color: var(--duct);
-    font-weight: 700; font-size: 18px; display: flex; align-items: center; justify-content: center; gap: 10px; transition: transform 120ms var(--ease), opacity 150ms; }
-  #call:active { transform: scale(0.97); }
-  #call:disabled { opacity: 0.6; }
-  #call svg { width: 22px; height: 22px; }
-  #homeNote { min-height: 22px; font-size: 14px; color: var(--mist); text-align: center; }
-  #homeNote.err { color: var(--stop); }
-  #install { display: none; border: 1px solid var(--line); background: transparent; border-radius: 14px; padding: 10px 16px; color: var(--mist); font-size: 14px; }
+  #call { width: 100%; max-width: 420px; height: 56px; border: 0; border-radius: 14px; background: var(--primary); color: var(--background);
+    font-weight: 400; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 10px; transition: transform 120ms var(--ease), opacity 150ms; }
+  #call:active { transform: scale(0.98); }
+  #call:disabled { opacity: 0.5; }
+  #call svg { width: 20px; height: 20px; }
+  #homeNote { min-height: 20px; font-size: 13px; color: var(--tertiary); text-align: center; }
+  #homeNote.err { color: var(--end); }
+  #install { display: none; border: 1px solid var(--border); background: var(--surface); border-radius: 10px; padding: 8px 14px; color: var(--secondary); font-size: 13px; }
 
-  /* ---------- In call: your camera is the stage ---------- */
-  #incall { background: #000; flex-direction: column; }
-  #stage { position: relative; flex: 1; overflow: hidden; background: var(--duct); }
-  #me { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  #agentVideo { display: none; }
+  /* ---------- In call: FaceTime ---------- */
+  #incall { background: #0d0d0d; color: var(--ink); }
+  #stage { position: relative; flex: 1; overflow: hidden; background: #161616; }
+  /* Before the technician's card arrives your camera is the stage; once it does, the card takes over and you go to the corner. */
+  #me, #agentVideo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  #agentVideo { opacity: 0; transition: opacity 400ms var(--ease); }
+  #stage.remote #agentVideo { opacity: 1; }
+  #stage.remote #me { inset: auto 16px calc(24px + var(--safe-b)) auto; left: 16px; width: 104px; height: 150px; border-radius: 18px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.12); z-index: 4; transition: width 400ms var(--ease), height 400ms var(--ease), border-radius 400ms var(--ease); }
+  #flip { position: absolute; left: 24px; bottom: calc(32px + var(--safe-b)); z-index: 5; width: 32px; height: 32px; border-radius: 50%; border: 0;
+    background: var(--glass); color: var(--ink); display: grid; place-items: center; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  #flip svg { width: 16px; height: 16px; }
+  #stage:not(.remote) #flip { left: auto; right: 16px; bottom: calc(24px + 4 * 62px + var(--safe-b)); width: 50px; height: 50px; }
+  #stage:not(.remote) #flip svg { width: 22px; height: 22px; }
 
-  #progress { position: absolute; left: 12px; right: 12px; top: calc(12px + var(--safe-t)); display: flex; gap: 6px; padding: 6px; border-radius: 14px;
-    background: #10233Dd9; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 3; justify-content: space-between; }
-  #progress span { flex: 1; text-align: center; font-size: 13px; font-weight: 600; padding: 6px 4px; border-radius: 9px; color: var(--mist);
-    transition: background 250ms var(--ease), color 250ms; }
-  #progress span.done { color: var(--paper); }
-  #progress span.now { background: var(--amber); color: var(--duct); }
-  #progress span.fixed { background: var(--ok); color: var(--duct); }
+  /* Top-left: who you are talking to, and whether they hear you */
+  #top { position: absolute; left: 16px; right: 16px; top: calc(12px + var(--safe-t)); z-index: 6; pointer-events: none; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+  .chip, #guide { pointer-events: auto; }
+  .chip { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px 7px 8px; border-radius: 999px; background: var(--glass);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); font-size: 13px; font-weight: 400; color: var(--ink); animation: row-arrive 300ms var(--ease) both; }
+  .chip img { width: 20px; height: 20px; border-radius: 50%; }
+  .chip .chev { color: var(--ink-3); font-weight: 300; }
+  #status { gap: 10px; animation-delay: 80ms; }
+  #orb { position: relative; width: 14px; height: 14px; flex: none; }
+  #orb i { position: absolute; inset: 0; border-radius: 50%; border: 1px solid var(--ink); transform: scale(var(--s, 1)); opacity: var(--o, 0.35); transition: transform 80ms linear, opacity 80ms linear; }
+  #orb i:nth-child(2) { inset: 3px; opacity: 0.5; }
+  #orb b { position: absolute; inset: 5px; border-radius: 50%; background: var(--live); transition: background 200ms; }
+  #orb.thinking b { background: var(--ink); animation: pixel-on 650ms ease-in-out infinite; }
+  #orb.thinking i { animation: pixel-on 650ms ease-in-out infinite; }
+  #orb.thinking i:nth-child(2) { animation-delay: 180ms; }
+  #say { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+  #who { font-weight: 500; font-size: 13px; }
+  #what { font-size: 12px; color: var(--ink-2); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; max-width: 58vw; }
+  #what.loading { background-image: linear-gradient(90deg, var(--ink-3) 35%, var(--ink) 50%, var(--ink-3) 65%); background-size: 200% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer-text 1.4s linear infinite; }
+  @keyframes shimmer-text { 0% { background-position: 150%; } 100% { background-position: -50%; } }
+  @keyframes pixel-on { 0%, 100% { opacity: 0.15; } 18%, 42% { opacity: 1; } 62% { opacity: 0.15; } }
+  @keyframes row-arrive { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-  /* Looking / diagnosing: a scan sweeps your camera so you know it is being read */
+  /* Your mic, as proof we hear you */
+  #you { display: flex; align-items: center; gap: 6px; margin-left: 4px; padding-left: 10px; border-left: 1px solid var(--glass-2); color: var(--ink-3); font-size: 11px; }
+  #bars { display: flex; gap: 2px; height: 16px; align-items: center; }
+  #bars i { width: 3px; height: 4px; border-radius: 2px; background: var(--ink-3); transition: height 70ms linear, background 150ms; }
+  #you.hearing #bars i { background: var(--live); }
+  #you.hearing { color: var(--ink); }
+  #you.muted { color: var(--end); }
+  #you.muted #bars i { background: var(--end); height: 4px !important; }
+
+  /* Look / Diagnose / Fix / Done */
+  #progress { display: flex; gap: 4px; padding: 6px 8px; animation-delay: 140ms; }
+  #progress span { font-size: 11px; color: var(--ink-3); padding: 2px 8px; border-radius: 999px; transition: background 250ms var(--ease), color 250ms; }
+  #progress span.done { color: var(--ink-2); }
+  #progress span.now { background: var(--ink); color: var(--primary); font-weight: 400; }
+  #progress span.fixed { background: var(--live); color: var(--primary); font-weight: 400; }
+
+  /* Looking / diagnosing: a quiet scan line so you know the frame is being read */
   #scan { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 250ms var(--ease); z-index: 1; }
   #scan.on { opacity: 1; }
-  #scan::before { content: ''; position: absolute; left: 0; right: 0; height: 30%; top: -30%;
-    background: linear-gradient(to bottom, transparent, #7CC8FF33 70%, #7CC8FFcc 100%); border-bottom: 2px solid var(--fiber);
-    animation: sweep 1.8s var(--ease) infinite; }
-  #scan::after { content: ''; position: absolute; inset: 18% 10%; border-radius: 22px;
-    background: linear-gradient(var(--fiber), var(--fiber)) 0 0 / 28px 3px, linear-gradient(var(--fiber), var(--fiber)) 0 0 / 3px 28px,
-      linear-gradient(var(--fiber), var(--fiber)) 100% 0 / 28px 3px, linear-gradient(var(--fiber), var(--fiber)) 100% 0 / 3px 28px,
-      linear-gradient(var(--fiber), var(--fiber)) 0 100% / 28px 3px, linear-gradient(var(--fiber), var(--fiber)) 0 100% / 3px 28px,
-      linear-gradient(var(--fiber), var(--fiber)) 100% 100% / 28px 3px, linear-gradient(var(--fiber), var(--fiber)) 100% 100% / 3px 28px;
-    background-repeat: no-repeat; }
+  #scan::before { content: ''; position: absolute; left: 0; right: 0; height: 28%; top: -28%;
+    background: linear-gradient(to bottom, transparent, rgba(255,255,255,.08) 70%, rgba(255,255,255,.4) 100%); border-bottom: 1px solid var(--ink); animation: sweep 1.8s var(--ease) infinite; }
   @keyframes sweep { to { top: 100%; } }
 
   /* The answer: your own device, frozen, with the part circled */
-  #guide { position: absolute; left: 12px; right: 12px; top: calc(66px + var(--safe-t)); z-index: 2; border-radius: 20px; overflow: hidden;
-    background: var(--duct-2); box-shadow: 0 18px 50px #000a; transform-origin: top right;
-    clip-path: inset(0 0 100% 0 round 20px); opacity: 0; transition: clip-path 500ms var(--ease), opacity 200ms, transform 400ms var(--ease); }
-  #guide.on { clip-path: inset(0 0 0 0 round 20px); opacity: 1; }
+  #guide { width: 100%; margin-top: 4px; z-index: 3; border-radius: 18px; overflow: hidden;
+    background: var(--background); color: var(--primary); box-shadow: 0 18px 50px rgba(0,0,0,.5); transform-origin: top right;
+    clip-path: inset(0 0 100% 0 round 18px); opacity: 0; transition: clip-path 500ms var(--ease), opacity 200ms, transform 400ms var(--ease); }
+  #guide.on { clip-path: inset(0 0 0 0 round 18px); opacity: 1; }
   #guide.min { transform: scale(0.34); }
   #guide.min .cap { display: none; }
-  .shot { position: relative; line-height: 0; }
-  .shot img { width: 100%; max-height: 46vh; object-fit: contain; background: #000; display: block; }
-  #ring { position: absolute; border: 4px solid var(--amber); border-radius: 50%; box-shadow: 0 0 0 4px #10233D66, 0 0 24px #FFB547aa;
-    animation: pulse 1.2s ease-in-out infinite; display: none; }
-  @keyframes pulse { 50% { transform: scale(1.12); box-shadow: 0 0 0 4px #10233D33, 0 0 40px #FFB547; } }
-  #ringLabel { position: absolute; transform: translate(-50%, 8px); background: var(--amber); color: var(--duct); font: 600 13px Figtree, sans-serif;
-    line-height: 1.2; padding: 4px 8px; border-radius: 8px; white-space: nowrap; display: none; }
-  .cap { padding: 14px 16px 16px; }
-  .cap small { color: var(--amber); font-weight: 600; font-size: 13px; }
-  .cap p { margin: 2px 0 0; font: 600 19px/1.3 'Bricolage Grotesque', sans-serif; }
-  #guide.result { background: var(--ok); color: var(--duct); }
-  #guide.result .cap small { color: var(--duct); opacity: 0.7; }
+  .shot { position: relative; line-height: 0; background: var(--surface); }
+  .shot img { width: 100%; max-height: 42vh; object-fit: contain; display: block; }
+  #ring { position: absolute; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 0 2px rgba(0,0,0,.55), inset 0 0 0 2px rgba(0,0,0,.55);
+    animation: ring-pulse 1.2s ease-in-out infinite; display: none; }
+  @keyframes ring-pulse { 50% { transform: scale(1.08); } }
+  #ringLabel { position: absolute; transform: translate(-50%, 8px); background: var(--primary); color: var(--background); font-size: 12px; font-weight: 400;
+    line-height: 1.2; padding: 4px 9px; border-radius: 999px; white-space: nowrap; display: none; }
+  .cap { padding: 12px 16px 14px; display: grid; gap: 2px; }
+  .cap small { color: var(--faint); font-size: 12px; }
+  .cap p { margin: 0; font-weight: 400; font-size: 17px; line-height: 1.35; }
+  #guide.result { background: var(--primary); color: var(--background); }
+  #guide.result .cap small { color: var(--ink-3); }
 
-  /* Bottom: who is talking, and proof we hear you */
-  #panel { position: relative; background: var(--duct); border-top: 1px solid var(--line); padding: 14px 18px 8px; }
-  .row { display: flex; align-items: center; gap: 14px; }
-  #orb { position: relative; width: 54px; height: 54px; flex: none; }
-  #orb i { position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--fiber); transform: scale(var(--s, 1)); opacity: var(--o, 0.35);
-    transition: transform 80ms linear, opacity 80ms linear; }
-  #orb i:nth-child(2) { inset: 9px; opacity: 0.7; }
-  #orb b { position: absolute; inset: 18px; border-radius: 50%; background: var(--fiber); transition: background 200ms; }
-  #orb.thinking i:first-child { animation: think 1.3s var(--ease) infinite; }
-  #orb.thinking b { background: var(--amber); }
-  @keyframes think { 0% { transform: scale(0.8); opacity: 0.9; } 100% { transform: scale(1.4); opacity: 0; } }
-  #say { flex: 1; min-width: 0; }
-  #who { display: block; font: 700 18px 'Bricolage Grotesque', sans-serif; }
-  #what { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; color: var(--mist); font-size: 14px; }
-  #what.loading { background: linear-gradient(90deg, var(--mist) 30%, var(--paper) 50%, var(--mist) 70%) 0 0 / 300% 100%;
-    -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 1.6s linear infinite; }
-  @keyframes shimmer { to { background-position: -300% 0; } }
-  #you { display: flex; align-items: center; gap: 8px; flex: none; color: var(--mist); font-size: 12px; flex-direction: column; }
-  #bars { display: flex; gap: 3px; height: 28px; align-items: center; }
-  #bars i { width: 4px; height: 6px; border-radius: 2px; background: var(--mist); transition: height 70ms linear, background 150ms; }
-  #you.hearing #bars i { background: var(--ok); }
-  #you.hearing { color: var(--ok); }
-  #you.muted { color: var(--stop); }
-
-  #bar { display: flex; justify-content: space-around; align-items: center; padding: 8px 24px calc(14px + var(--safe-b)); background: var(--duct); }
-  .ctl { width: 58px; height: 58px; border-radius: 50%; border: 0; background: var(--duct-2); display: grid; place-items: center; transition: background 150ms, transform 120ms var(--ease); }
-  .ctl:active { transform: scale(0.94); }
-  .ctl svg { width: 26px; height: 26px; }
-  .ctl.off { background: var(--paper); color: var(--duct); }
-  #hang { background: var(--stop); width: 72px; }
-  #unmute { position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); display: none; padding: 14px 20px; border: 0; border-radius: 14px;
-    background: var(--amber); color: var(--duct); font-weight: 700; z-index: 4; }
+  /* Bottom-right: round controls, FaceTime order */
+  #bar { position: absolute; right: 16px; bottom: calc(24px + var(--safe-b)); z-index: 6; display: flex; flex-direction: column; gap: 12px; }
+  .ctl { width: 50px; height: 50px; border-radius: 50%; border: 0; background: var(--glass); color: var(--ink); display: grid; place-items: center;
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); transition: background 150ms, color 150ms, transform 120ms var(--ease); }
+  .ctl:active { transform: scale(0.92); }
+  .ctl svg { width: 22px; height: 22px; }
+  .ctl.off { background: var(--ink); color: var(--primary); }
+  #hang { background: var(--end); }
+  #unmute { position: absolute; left: 50%; bottom: calc(100px + var(--safe-b)); transform: translateX(-50%); display: none; padding: 12px 18px; border: 0; border-radius: 999px;
+    background: var(--ink); color: var(--primary); font-weight: 400; font-size: 14px; z-index: 7; white-space: nowrap; }
 
   @media (prefers-reduced-motion: reduce) {
-    #scan::before, #orb.thinking i:first-child, #ring, #what.loading { animation: none; }
-    #orb i, #guide { transition: opacity 150ms; }
-    #what.loading { color: var(--paper); background: none; }
+    #scan::before, #orb.thinking i, #orb.thinking b, #ring, #what.loading, .chip, .pitch { animation: none; }
+    #orb i, #guide, #agentVideo, #stage.remote #me { transition: opacity 150ms; }
+    #what.loading { color: var(--ink); background: none; }
   }
 </style>
 </head>
@@ -160,7 +176,7 @@
   </div>
   <div class="dock">
     <button id="call">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10l5-3v10l-5-3"/><rect x="3" y="6" width="12" height="12" rx="3"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10l5-3v10l-5-3"/><rect x="3" y="6" width="12" height="12" rx="3"/></svg>
       Start video call
     </button>
     <button id="install">Add to home screen</button>
@@ -170,35 +186,40 @@
 
 <section id="incall" class="screen" aria-label="Video call">
   <div id="stage">
-    <video id="me" autoplay playsinline muted></video>
     <video id="agentVideo" autoplay playsinline muted></video>
+    <video id="me" autoplay playsinline muted></video>
     <div id="scan" aria-hidden="true"></div>
-    <div id="progress" aria-label="Diagnosis progress">
-      <span data-s="looking">Look</span><span data-s="diagnosing">Diagnose</span><span data-s="guiding">Fix</span><span data-s="resolved">Done</span>
-    </div>
+
+    <div id="top">
+      <div class="chip"><img src="/icons/icon-192.png" alt="" />__BRAND__ Technician <span class="chev">›</span></div>
+      <div id="status" class="chip" aria-live="polite">
+        <div id="orb"><i></i><i></i><b></b></div>
+        <div id="say"><strong id="who">Joining</strong><span id="what">Connecting you to a technician</span></div>
+        <div id="you" aria-label="Your microphone"><div id="bars"><i></i><i></i><i></i><i></i><i></i></div><span id="youLabel">You</span></div>
+      </div>
+      <div id="progress" class="chip" aria-label="Diagnosis progress">
+        <span data-s="looking">Look</span><span data-s="diagnosing">Diagnose</span><span data-s="guiding">Fix</span><span data-s="resolved">Done</span>
+      </div>
     <div id="guide" role="region" aria-label="What to do">
       <div class="shot"><img id="shot" alt="Your device with the part to touch circled" /><div id="ring"></div><div id="ringLabel"></div></div>
       <div class="cap"><small id="stepNo"></small><p id="stepText"></p></div>
     </div>
-    <button id="unmute">Tap to hear the technician</button>
-  </div>
-  <div id="panel" aria-live="polite">
-    <div class="row">
-      <div id="orb"><i></i><i></i><b></b></div>
-      <div id="say"><strong id="who">Joining</strong><span id="what">Connecting you to a technician</span></div>
-      <div id="you" aria-label="Your microphone"><div id="bars"><i></i><i></i><i></i><i></i><i></i></div><span id="youLabel">You</span></div>
     </div>
-  </div>
-  <div id="bar">
-    <button id="mute" class="ctl" aria-label="Mute microphone" aria-pressed="false">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+
+    <button id="unmute">Tap to hear the technician</button>
+
+    <button id="flip" aria-label="Switch camera">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><path d="M9 13a3 3 0 0 1 5-2m1 2a3 3 0 0 1-5 2"/></svg>
     </button>
-    <button id="hang" class="ctl" aria-label="Hang up">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 14c4.5-4 11.5-4 16 0l-2 3-3-1v-2.5a9 9 0 0 0-6 0V16l-3 1z"/></svg>
-    </button>
-    <button id="flip" class="ctl" aria-label="Switch camera">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><path d="M9 13a3 3 0 0 1 5-2m1 2a3 3 0 0 1-5 2"/></svg>
-    </button>
+
+    <div id="bar">
+      <button id="mute" class="ctl" aria-label="Mute microphone" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+      </button>
+      <button id="hang" class="ctl" aria-label="End call">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
   </div>
 </section>
 
@@ -334,10 +355,10 @@ function loop() {
   if (!running) return;
   const a = agentLevel(), c = muted ? 0 : callerLevel();
   const ring = $('orb').querySelector('i');
-  ring.style.setProperty('--s', String(1 + a * 0.5));
+  ring.style.setProperty('--s', String(1 + a * 0.8));
   ring.style.setProperty('--o', String(0.3 + a * 0.7));
   const bars = $('bars').children;
-  for (let k = 0; k < bars.length; k++) bars[k].style.height = `${6 + c * 22 * (1 - Math.abs(k - 2) * 0.22)}px`;
+  for (let k = 0; k < bars.length; k++) bars[k].style.height = `${4 + c * 12 * (1 - Math.abs(k - 2) * 0.22)}px`;
   const at = a > 0.06, ct = c > 0.08;
   if (at !== agentTalking || ct !== callerTalking) {
     agentTalking = at; callerTalking = ct;
@@ -372,12 +393,13 @@ async function start() {
 
     room = new Room({ adaptiveStream: false, dynacast: false });
     room.on(RoomEvent.TrackSubscribed, (track) => {
-      if (track.kind === 'video') track.attach($('agentVideo'));
+      if (track.kind === 'video') { track.attach($('agentVideo')); $('stage').classList.add('remote'); }
       else {
         track.attach(document.body.appendChild(document.createElement('audio')));
         agentLevel = levelMeter(track.mediaStreamTrack);
       }
     });
+    room.on(RoomEvent.TrackUnsubscribed, (track) => { if (track.kind === 'video') $('stage').classList.remove('remote'); });
     room.on(RoomEvent.ParticipantAttributesChanged, (changed, p) => {
       if (changed['lk.agent.state']) { agentState = changed['lk.agent.state']; renderVoice(); }
     });
@@ -417,6 +439,7 @@ function end(disconnect = true) {
   if (disconnect) room?.disconnect();
   cam?.stop(); mic?.stop(); audioCtx?.close().catch(() => {});
   room = cam = mic = undefined;
+  $('stage').classList.remove('remote');
   wakeLock?.release().catch(() => {});
   fetch('/api/dev-session/end', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room: s.room }), keepalive: true }).catch(() => {});
   show('home');

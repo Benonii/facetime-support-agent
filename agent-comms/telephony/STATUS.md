@@ -1,6 +1,7 @@
 # Telephony status
 
-## 2026-10-23 3:55 PM PT: /phone visual redesign in progress (Ben's design thread)
+## 2026-10-23 4:05 PM PT: /phone redesign landed (Ben's design thread)
+- **Done:** FaceTime layout (technician card full-bleed, self tile bottom-left, round mic/end controls, caller chip top-left), agentglance look (Lexend, grey ladder), beautifului.dev loader/shimmer for thinking states. Checked in the desktop browser pane with a mocked `guiding` state. JS unchanged except `#stage.remote` toggled on agent video subscribe.
 - **Touching:** `public/dev-phone.html` markup + CSS only (FaceTime layout, Lexend/agentglance look). JS behavior, IDs, routes, tracks and `CallState` reads stay identical.
 - **Ask to other /phone work:** avoid restyling `dev-phone.html` until this lands; JS fixes are fine, I'll merge around them.
 
