@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { AutoSubscribe, cli, defineAgent, llm, ServerOptions, voice } from '@livekit/agents';
 import { realtime } from '@livekit/agents-plugin-openai';
@@ -12,6 +13,10 @@ import { FrameGrabber, thumb } from './frames.js';
 import { sendIMessage } from './imessage.js';
 
 const BRAND = process.env.BRAND_NAME || 'Shure';
+// Scripted demo: every look uses this photo (a muted Shure mic) instead of the live camera.
+const DEMO_PHOTO = process.env.DEMO_SCRIPT === '1'
+  ? process.env.DEMO_PHOTO || fileURLToPath(new URL('../intelligence/products/demo-shure-muted.jpg', import.meta.url))
+  : '';
 const intelligence = createIntelligence();
 
 const INSTRUCTIONS = `You are Alex, a ${BRAND} customer support agent on a live video call. You are an AI; say so if asked.
@@ -71,7 +76,7 @@ export default defineAgent({
     const caller = await ctx.waitForParticipant();
     await post({ type: 'call.started', callId });
     const frames = new FrameGrabber(ctx.room, caller.identity);
-    const visual = createVisualRequestController({ intelligence, state, grabJpeg: () => frames.grabJpeg(), snapshot: jpeg => thumb(jpeg, 640), emit });
+    const visual = createVisualRequestController({ intelligence, state, grabJpeg: () => (DEMO_PHOTO ? readFile(DEMO_PHOTO) : frames.grabJpeg()), snapshot: jpeg => thumb(jpeg, 640), emit });
 
     const tools = {
       ...createVisualTools(visual),

@@ -5,6 +5,7 @@
     "screens:demo": "node --import tsx src/screens/demo/server.ts",
     "screens:test": "node --import tsx --test src/screens/screens.test.ts",
     "agent": "tsx --env-file=.env.local src/agent/agent.ts dev",
+    "agent:demo": "DEMO_SCRIPT=1 tsx --env-file=.env.local src/agent/agent.ts dev",
     "agent:mock": "MOCK_INTELLIGENCE=1 tsx --env-file=.env.local src/agent/agent.ts dev",
     "agent:start": "tsx --env-file=.env.local src/agent/agent.ts start",
     "server": "tsx watch --env-file=.env.local src/telephony/server.ts",
