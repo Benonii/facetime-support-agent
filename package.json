@@ -10,7 +10,9 @@
     "try:intel": "tsx --env-file-if-exists=.env.local src/intelligence/try.ts",
     "typecheck": "tsc -p .",
     "smoke": "tsx --env-file-if-exists=.env.local src/smoke.ts",
-    "agent:cli": "INTELLIGENCE_PROVIDER=codex-cli MOCK_INTELLIGENCE=0 tsx --env-file=.env.local src/agent/agent.ts dev"
+    "agent:cli": "INTELLIGENCE_PROVIDER=codex-cli MOCK_INTELLIGENCE=0 tsx --env-file=.env.local src/agent/agent.ts dev",
+    "imessage": "tsx --env-file=.env.local src/imessage/index.ts",
+    "imessage:sim": "MOCK_INTELLIGENCE=1 tsx --env-file-if-exists=.env.local src/imessage/simulate.ts"
   },
   "dependencies": {
     "@hono/node-server": "2.1.5",
