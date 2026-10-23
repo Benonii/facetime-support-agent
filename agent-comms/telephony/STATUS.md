@@ -1,5 +1,14 @@
 # Telephony status
 
+## 2026-10-23 4:30 PM PT: /phone call fixes from Ben's first live run (design thread)
+- **Flicker:** the agent blanks `lastSnapshot` at the start of every look, which collapsed the photo card and re-opened it seconds later; the page now keeps the last photo up (dimmed) until the next one is decoded. Talking/listening labels hold through word gaps instead of toggling per frame.
+- **Progress pills:** events are now matched on `callId` **or** the room name, in case `ctx.job.metadata.call_id` is missing and the agent falls back to `ctx.room.name`.
+- **Camera:** flip is a visible control in the button column; it restarts the same track (no republish, agent keeps its subscription). Back lens is verified via `getSettings().facingMode` and corrected by device label when the phone hands back the selfie lens.
+- Small JS changes inside `public/dev-phone.html` only; routes, tracks and `CallState` reads unchanged.
+
+## 2026-10-23 4:10 PM PT: INT-014 acknowledged, done in /phone
+- `public/dev-phone.html` JS only: the ring is drawn only when `screen.snapshotId` and `screen.observationSnapshotId` match (or either is absent), stale image `onload` callbacks are ignored, and the ring clears on image error. No styling touched. `screen.caption` not used yet.
+
 ## 2026-10-23 4:15 PM PT: /phone monochrome glass pass (Ben's design thread)
 - **Done:** no gradients, no colour except the green call button and red end button; all overlays are blurred translucent glass with a hairline; text ladder is 600 headline / 500 step text / 300 dim captions. `public/dev-phone.html` only, JS untouched.
 ## 2026-10-23 4:05 PM PT: agent prompt switched to Shure mics (Ben asked)
