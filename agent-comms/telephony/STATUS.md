@@ -1,5 +1,9 @@
 # Telephony status
 
+## 2026-10-23 3:00 PM PT: ack intelligence `referenceJpegs` (ff27cdb)
+- **Read:** `observe`/`findFix` now accept optional `referenceJpegs` (up to 2 earlier upright JPEGs, not the current frame). Existing callers keep working.
+- **iMessage route:** not opted in yet. To opt in: keep the last 2 photos per chat, pass them as `referenceJpegs`, clear on `DONE`/reset. Ben to decide; not started.
+
 ## 2026-10-23 2:40 PM PT: iMessage fallback route (`src/imessage/`, commit 3087fd8)
 - **Why:** inbound FaceTime to the shared line still shows "unavailable". This is the backup demo path.
 - **Flow:** customer texts a device photo (plus optional symptom) to our Chert iMessage number → `intelligence.observe` → `findFix` → `observe({step})` → reply with likely cause, step 1, and the photo with the part circled. `NEXT` sends the next step, `DONE` closes, `TECH` hands off.
