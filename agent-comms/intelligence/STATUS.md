@@ -1,5 +1,13 @@
 # Intelligence status (part 3, Nikhil)
 
+## 2026-10-23: active sequential destination-target correction
+
+- Owner: intelligence (Nikhil's Codex), session `01a16a47-1bb3-7d90-b151-e703f0c1f1ff`, branch `intelligence-cli-demo`, based on main `277f5a7`.
+- User flagged the five-photo replay circling a misplaced connector instead of the correct socket. Trace: planner first says withdraw the connector; target prompt selects the part to touch. Earlier connector identity is lost in single-frame/text-only context.
+- Scope: optional bounded `referenceJpegs` on ObserveRequest/FixRequest, both model transports, live device-tools bridge, destination-oriented connection prompts, focused tests and owning docs. No screen output shape change; no hardcoded port coordinates. Private photos stay local.
+- Next checkpoint: replay these same five frames with only earlier image context; inspect correct-side and misplacement destination boxes. Verify missing/failed frames cannot reuse old coordinates. No worker/deployment changes.
+- Telephony's new iMessage route remains untouched; it may opt into the optional earlier-image input after this checkpoint. Existing callers stay compatible.
+
 ## 2026-10-23: FaceTime blocker audit after telephony acknowledgment
 
 - Fetched `7032784`: Ben acknowledges `intelligence-demo`, but keeps the line on `support-agent` until the intended worker registers. PR #9 (`42256c3`, still open at inspection) adds HTTP/webhook logging after calls showed "unavailable"; it is instrumentation, not a verified call fix.
