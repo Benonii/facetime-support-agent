@@ -1,5 +1,8 @@
 # Telephony status
 
+## 2026-10-23 4:25 PM PT: scripted demo mode (Ben asked: live vision too slow for the demo)
+- `npm run agent:demo` (`DEMO_SCRIPT=1`): every look uses `src/intelligence/products/demo-shure-muted.jpg` (muted Shure SM58 handheld, red light, mute icon) and `src/intelligence/scripted.ts` answers (diagnosis: muted; 3 steps; circles power button, screen, grille; verify reports unmuted). Hooks: one line in `intelligence/index.ts`, `DEMO_PHOTO` in `agent.ts` `grabJpeg`. Off unless `DEMO_SCRIPT=1`; live path unchanged. Flow checked through `createVisualRequestController`.
+
 ## 2026-10-23 4:20 PM PT: /phone optimistic layer (JS only, no styling)
 - The moment the agent starts a look (stage `looking`, or `guiding` with no step and no snapshot), the page freezes the caller's own camera frame into the photo card ("Checking this view…"); the agent's snapshot replaces it when it arrives. "Thinking" shows right after the caller stops talking instead of waiting for `lk.agent.state`. Checked in headless Chromium.
 

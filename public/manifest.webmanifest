@@ -1,6 +1,6 @@
 {
-  "name": "__BRAND__ Video Support",
-  "short_name": "__BRAND__",
+  "name": "SupportCam",
+  "short_name": "SupportCam",
   "description": "Video call a technician who can see your device and show you what to fix.",
   "start_url": "/phone",
   "scope": "/",
