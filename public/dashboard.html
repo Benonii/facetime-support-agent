@@ -1,59 +1,46 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Support desk</title>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lumen · Support desk</title>
 <style>
-  :root { --bg:#0b0f14; --panel:#151b23; --text:#e8edf2; --dim:#8b98a5; --accent:#3ddc97; --ring:#ffd23f; --bad:#ff5d5d; }
-  body { margin: 0; background: var(--bg); color: var(--text); font: 15px system-ui, sans-serif; padding: 24px; }
-  h1 { margin: 0 0 4px; font-size: 22px; } .sub { color: var(--dim); margin-bottom: 20px; }
-  #kpis { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-  .kpi { background: var(--panel); border-radius: 12px; padding: 14px 18px; min-width: 150px; }
-  .kpi b { display: block; font-size: 26px; margin-top: 4px; }
-  #calls { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
-  .call { background: var(--panel); border-radius: 14px; padding: 16px; }
-  .call img { width: 100%; border-radius: 10px; background: #000; aspect-ratio: 4/3; object-fit: contain; }
-  .row { display: flex; justify-content: space-between; margin-top: 8px; gap: 8px; } .dim { color: var(--dim); }
-  .stage { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); }
-  .step { color: var(--ring); margin-top: 8px; } ol { margin: 6px 0 0 18px; padding: 0; color: var(--dim); }
-</style>
-</head>
-<body>
-<h1>Support desk</h1>
-<div class="sub">Live FaceTime video support. Every call fixed on the line is a technician visit not paid for.</div>
-<div id="kpis"></div>
-<div id="calls"></div>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+:root{--bg:#f3f3e9;--ink:#20352b;--muted:#7a8678;--line:#dce1d3;--panel:#fafbf6;--lime:#d2ed9a}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px 'DM Sans',sans-serif}header{height:82px;padding:0 38px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}.brand{display:flex;align-items:center;gap:12px}.mark{width:36px;height:36px;border-radius:12px;background:var(--ink);color:var(--lime);display:grid;place-items:center;font-size:22px}.brand strong{font:800 24px Manrope,sans-serif;letter-spacing:-1px}.brand span{font-size:12px;color:var(--muted);padding-left:18px;margin-left:8px;border-left:1px solid #cdd5c8}.connection{font-size:11px;display:flex;align-items:center;gap:8px}.connection i{width:6px;height:6px;border-radius:50%;background:#b9ac74}.connection.online i{background:#83a252}main{max-width:1440px;margin:auto;padding:34px 38px}.eyebrow{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}h1{font:600 30px Manrope,sans-serif;letter-spacing:-1px;margin:10px 0}p.sub{color:var(--muted);font-size:13px;margin:0 0 28px}.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:28px 0}.kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 22px}.kpi .label{font-size:11px;color:var(--muted)}.kpi strong{font:500 35px Manrope,sans-serif;display:block;letter-spacing:-1px;margin:7px 0}.kpi small{font-size:10px;color:var(--muted)}.kpi:last-child{background:#e5edda}.workspace{display:grid;grid-template-columns:270px 1fr;gap:20px}.cases{border:1px solid var(--line);border-radius:15px;background:var(--panel);overflow:hidden}.cases-title{padding:20px;border-bottom:1px solid var(--line);font-size:12px;font-weight:600}.case-button{font:inherit;width:100%;cursor:pointer;background:none;border:0;border-bottom:1px solid var(--line);padding:20px;text-align:left;color:var(--ink)}.case-button.active{background:#e7eddd;border-left:3px solid #536d41;padding-left:17px}.case-button b{display:block;font-size:12px;margin:8px 0}.case-button small{font-size:10px;color:var(--muted)}.tag{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#748461}.case-detail{background:var(--panel);border:1px solid var(--line);border-radius:15px;overflow:hidden}.detail-head{padding:22px 25px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:20px}.detail-head h2{font:600 19px Manrope,sans-serif;margin:0 0 5px}.detail-head small{font-size:10px;color:var(--muted)}.status{border:1px solid #ced9c2;border-radius:20px;padding:8px 12px;font-size:10px;white-space:nowrap}.detail-body{display:grid;grid-template-columns:1.05fr 1fr;gap:25px;padding:25px}.photo{background:#e9ecdf;border-radius:12px;overflow:hidden;min-height:190px;display:grid;place-items:center}.photo img{width:100%;display:block}.photo-label{font-size:10px;color:var(--muted);margin:10px 0 20px}.lights{display:flex;gap:8px;flex-wrap:wrap}.light{font-size:10px;background:#edf1e5;border:1px solid #dfe5d6;border-radius:20px;padding:7px 10px;display:flex;align-items:center;gap:6px}.light i{height:7px;width:7px;border-radius:50%}.section-label{font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin:0 0 12px}.finding{font-size:12px;line-height:1.8;padding-left:14px;position:relative;margin:6px 0}.finding:before{content:'·';position:absolute;left:0;color:#6a8b46}.next{background:#1d3527;border-radius:12px;color:#eff4e6;padding:19px;margin:24px 0}.next .section-label{color:#bdd597;margin-bottom:9px}.next p{font-size:15px;line-height:1.7;margin:0}.plan{padding:0;margin:0;list-style:none;counter-reset:steps}.plan li{display:flex;gap:10px;font-size:11px;line-height:1.8;color:var(--muted);margin-bottom:9px}.plan li:before{counter-increment:steps;content:counter(steps);flex-shrink:0;width:21px;height:21px;border:1px solid #d9e0d0;border-radius:50%;text-align:center;font-size:9px;line-height:19px}.plan li.current{color:var(--ink)}.plan li.current:before{background:var(--lime);border-color:var(--lime)}.ticket{background:#e6efdb;border-radius:11px;padding:16px;font-size:12px;line-height:1.9;margin-top:22px}.source{display:block;font-size:11px;color:#547641;text-decoration:none;margin:9px 0;overflow-wrap:anywhere}.empty{padding:60px 30px;text-align:center;color:var(--muted);line-height:1.9}.empty strong{display:block;color:var(--ink);font:500 22px Manrope,sans-serif;margin-bottom:9px}.cases .empty{font-size:12px;padding:30px 20px}.footer{color:var(--muted);font-size:10px;margin-top:23px;display:flex;justify-content:space-between}.phase{font-size:11px;color:var(--muted);margin-top:13px}button:focus-visible,a:focus-visible{outline:3px solid #7f9e47;outline-offset:-3px}@media(max-width:1050px){.detail-body{grid-template-columns:1fr}.workspace{grid-template-columns:220px 1fr}}@media(max-width:700px){header{padding:0 18px}.brand span{display:none}main{padding:24px 16px}.kpis{grid-template-columns:1fr 1fr;gap:10px}.kpi{padding:17px}.kpi strong{font-size:29px}.workspace{grid-template-columns:1fr}.cases{display:none}.detail-body{padding:19px}.detail-head{padding:19px}.footer{display:block;line-height:1.8}h1{font-size:25px}}
+</style></head>
+<body><header><div class="brand"><div class="mark" aria-hidden="true">↗</div><strong>lumen</strong><span>Support desk</span></div><div class="connection" id="connection" role="status"><i></i><span>Connecting</span></div></header>
+<main><div class="eyebrow">Here to get things working</div><h1>A clearer path to fixed.</h1><p class="sub">Live conversations, shared context, and one useful next step.</p><section class="kpis" id="kpis" aria-label="Support metrics"></section><div class="workspace"><aside class="cases"><div class="cases-title">Conversations</div><div id="case-list"></div></aside><section class="case-detail" id="detail" aria-label="Selected support case"></section></div><div class="footer"><span>Estimated savings use the configured cost per technician visit. They are not measured billing savings.</span><span id="updated">Waiting for the first call</span></div></main>
 <script>
-const TRUCK_ROLL = Number('__TRUCK_ROLL_COST__') || 150;
-const calls = new Map();
-const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-function render() {
-  const all = [...calls.values()].filter((c) => c.stage !== 'waiting');
-  const fixed = all.filter((c) => c.stage === 'resolved').length;
-  const booked = all.filter((c) => c.stage === 'technician').length;
-  const closed = fixed + booked;
-  document.getElementById('kpis').innerHTML = [
-    ['Calls', all.length], ['Fixed on call', fixed], ['Technician booked', booked],
-    ['Fix rate', closed ? Math.round((100 * fixed) / closed) + '%' : '–'], ['Truck rolls avoided', '$' + fixed * TRUCK_ROLL],
-  ].map(([k, v]) => `<div class="kpi">${k}<b>${v}</b></div>`).join('');
-  document.getElementById('calls').innerHTML = all.reverse().map((c) => {
-    const o = c.observation;
-    return `<div class="call">
-      <div class="stage">${esc(c.stage)}</div>
-      ${c.lastSnapshot ? `<img src="${c.lastSnapshot}">` : ''}
-      <div class="row"><b>${esc(o ? `${o.device.brand} ${o.device.model} ${o.device.type}` : 'Waiting for device')}</b><span class="dim">${c.looks} looks</span></div>
-      ${o ? `<div class="dim">Lights: ${esc(o.indicators.map((l) => `${l.label} ${l.color} ${l.pattern}`).join(' · ') || 'none seen')}</div>` : ''}
-      ${o?.findings.length ? `<div class="dim">${esc(o.findings.join(' · '))}</div>` : ''}
-      ${c.plan ? `<div class="row"><span>Cause: ${esc(c.plan.likely_cause)}</span></div><ol>${c.plan.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>` : ''}
-      ${c.step ? `<div class="step">Now on step ${c.step.n}: ${esc(c.step.text)}</div>` : ''}
-      ${c.ticket ? `<div class="row"><span class="dim">Ticket ${esc(c.ticket.id)}</span><b>${c.ticket.outcome === 'resolved_on_call' ? 'Fixed on call' : 'Tech ' + esc(c.ticket.window)}</b></div>` : ''}
-    </div>`;
-  }).join('');
+const COST = Number('__TRUCK_ROLL_COST__') || 150;
+const calls = new Map(); let selected;
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const STAGES={waiting:'Waiting for caller',looking:'Looking at the device',diagnosing:'Checking the next step',guiding:'Guiding the fix',resolved:'Resolved on call',technician:'Further support requested'};
+const COLORS={green:'#83ac68',red:'#db8c78',blue:'#84a9ce',white:'#c7cabc',amber:'#d8b36c',purple:'#b19ec6',off:'#8e9b88',other:'#a3af9c'};
+function render(){
+ const all=[...calls.values()].filter((c)=>c.started || (c.state && c.state.stage!=='waiting'));
+ const fixed=all.filter((c)=>c.state?.stage==='resolved').length, tech=all.filter((c)=>c.state?.stage==='technician').length;
+ const active=all.filter((c)=>!c.ended && !['resolved','technician'].includes(c.state?.stage)).length;
+ document.getElementById('kpis').innerHTML=[['Active conversations',active,'Here, working through it'],['Resolved on call',fixed,'Guided to an outcome'],['Visit requests',tech,'With the case attached'],['Estimated cost avoided','$'+(fixed*COST).toLocaleString(),'Assumes $'+COST+' per visit']].map(([label,value,sub])=>`<div class="kpi"><div class="label">${label}</div><strong>${value}</strong><small>${sub}</small></div>`).join('');
+ if(!all.some((c)=>c.id===selected)) selected=all.at(-1)?.id;
+ document.getElementById('case-list').innerHTML=all.length?all.slice().reverse().map((c)=>`<button class="case-button ${c.id===selected?'active':''}" data-call="${esc(c.id)}"><span class="tag">${esc(c.ended?'Call ended':STAGES[c.state?.stage]||'Connected')}</span><b>${esc(c.state?.observation?.device.model||'Device support')}</b><small>${esc(c.state?.ticket?.id||c.id.slice(0,20))}</small></button>`).join(''):'<div class="empty">The next conversation will appear here.</div>';
+ document.querySelectorAll('[data-call]').forEach((b)=>b.onclick=()=>{selected=b.dataset.call;render();});
+ const entry=calls.get(selected),s=entry?.state;
+ if(!s){document.getElementById('detail').innerHTML='<div class="empty"><strong>Ready when they are.</strong>When a caller shows their device, observations and guidance will appear here.<br>No active case is being shown.</div>';return;}
+ const o=s.observation, terminal=['resolved','technician'].includes(s.stage);
+ const validPhoto=typeof s.lastSnapshot==='string' && /^data:image\/(jpeg|png|webp);base64,/.test(s.lastSnapshot);
+ const ids=s.screen?.snapshotId||s.screen?.observationSnapshotId;
+ const matched=!ids||(s.screen?.snapshotId&&s.screen.snapshotId===s.screen.observationSnapshotId);
+ const findings=matched&&o?.device_visible?o.findings:[];
+ const next=s.stage==='resolved'?'The case was marked resolved on this call.':s.stage==='technician'?(s.ticket?.window?'Requested visit: '+s.ticket.window:'Ready for the next support step.')
+ :!matched?'A fresh photo arrived. Waiting for matching analysis.':o?.device_visible===false?(o.next_shot||'Ask for a clearer view.'):s.step?.text||o?.next_shot||(s.stage==='diagnosing'?'Checking the observations and available instructions.':'Waiting for the next instruction.');
+ const sources=(s.plan?.sources||[]).filter((r)=>{try{return ['https:','http:'].includes(new URL(r.url).protocol)}catch{return false}});
+ document.getElementById('detail').innerHTML=`<div class="detail-head"><div><h2>${esc(o?[o.device.brand,o.device.model].filter(Boolean).join(' ')||'Device support':'Device support')}</h2><small>${esc(entry.id)} · ${Number(s.looks)||0} observations</small></div><span class="status">${esc(entry.ended?'Call ended':STAGES[s.stage])}</span></div><div class="detail-body"><div><div class="photo">${validPhoto?`<img alt="Latest device snapshot" src="${esc(s.lastSnapshot)}">`:'<div class="empty">Waiting for a device view</div>'}</div><p class="photo-label">${validPhoto?'Latest camera snapshot':'No camera snapshot available'}${!matched?' · awaiting matching analysis':''}</p><div class="lights">${matched&&o?.device_visible?o.indicators.map((l)=>`<span class="light"><i style="background:${COLORS[l.color]||COLORS.other}"></i>${esc(l.label)} · ${esc(l.color)}</span>`).join(''):''}</div>${s.screen?.caption?`<div class="phase">${s.screen.caption.speaker==='caller'?'Caller':'Agent'}: ${esc(s.screen.caption.text)}</div>`:''}${s.ticket?`<div class="ticket"><strong>${esc(s.ticket.id)}</strong><br>${esc(s.ticket.diagnosis)}</div>`:''}</div><div><div class="section-label">What we know</div>${findings.length?findings.map((f)=>`<div class="finding">${esc(f)}</div>`).join(''):'<div class="finding">Waiting for a clear observation.</div>'}<div class="next"><div class="section-label">${terminal?'Outcome':'The next step'}</div><p>${esc(next)}</p></div>${s.plan?`<div class="section-label">The plan</div><ol class="plan">${s.plan.steps.map((step,i)=>`<li class="${i+1===s.step?.n?'current':''}">${esc(step)}</li>`).join('')}</ol>`:''}${sources.length?`<div class="section-label" style="margin-top:24px">Supporting sources</div>${sources.map((r)=>`<a class="source" href="${esc(r.url)}" target="_blank" rel="noopener noreferrer">${esc(r.title)} ↗</a>`).join('')}`:''}</div></div>`;
 }
-const es = new EventSource('/api/stream');
-es.onmessage = (m) => { const ev = JSON.parse(m.data); if (ev.type === 'state') { calls.set(ev.callId, ev.state); render(); } };
+const connection=document.getElementById('connection');const es=new EventSource('/api/stream');
+es.onopen=()=>{connection.classList.add('online');connection.querySelector('span').textContent='Connected to support';};
+es.onerror=()=>{connection.classList.remove('online');connection.querySelector('span').textContent='Reconnecting…';};
+es.onmessage=(message)=>{let ev;try{ev=JSON.parse(message.data)}catch{return}if(!ev||typeof ev.callId!=='string')return;
+ const old=calls.get(ev.callId)||{id:ev.callId};
+ if(ev.type==='state' && ev.state && Object.hasOwn(STAGES,ev.state.stage)){old.state=ev.state;}
+ else if(ev.type==='call.started'){old.started=true;old.ended=false;}
+ else if(ev.type==='call.ended'){old.ended=true;}else return;
+ calls.set(ev.callId,old);document.getElementById('updated').textContent='Updated '+new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});render();};
 render();
-</script>
-</body>
-</html>
+</script></body></html>
