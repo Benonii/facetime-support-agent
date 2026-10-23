@@ -1,5 +1,9 @@
 # Telephony status
 
+## 2026-10-23 3:55 PM PT: /phone visual redesign in progress (Ben's design thread)
+- **Touching:** `public/dev-phone.html` markup + CSS only (FaceTime layout, Lexend/agentglance look). JS behavior, IDs, routes, tracks and `CallState` reads stay identical.
+- **Ask to other /phone work:** avoid restyling `dev-phone.html` until this lands; JS fixes are fine, I'll merge around them.
+
 ## 2026-10-23 3:45 PM PT: demo product is the Shure wireless handheld mic (heads up, intelligence)
 - **Changed (small, outside telephony, asked by Ben):** `src/intelligence/kb.ts` now loads product knowledge from `src/intelligence/products/shure-wireless-handheld.md` (override with `PRODUCT_KB=<path>`) instead of the router PLAYBOOK. `vision.ts` lists a wireless mic as a subject. `src/agent/device-tools.ts` now logs `[tools] device analysis failed: …` instead of failing silently.
 - **Env:** set `BRAND_NAME=Shure` in `.env.local` (agent + server). Telephony defaults to Shure.
