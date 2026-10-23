@@ -23,8 +23,10 @@ export const CALLER_VIDEO_TRACK = TRACKS.callerVideo;
 export class FrameGrabber {
   private latest?: { frame: VideoFrame; rotation: VideoRotation; at: number };
   private stream?: VideoStream;
+  private generation = 0;
+  private closed = false;
 
-  constructor(private room: Room) {
+  constructor(private room: Room, private callerIdentity?: string) {
     room.on(RoomEvent.TrackSubscribed, this.onTrack);
     // Tracks that were already subscribed before we attached.
     for (const p of room.remoteParticipants.values()) {
@@ -35,22 +37,25 @@ export class FrameGrabber {
   }
 
   private onTrack = (track: RemoteTrack, pub: RemoteTrackPublication, p: RemoteParticipant) => {
-    if (track.kind !== TrackKind.KIND_VIDEO) return;
+    if (this.closed || track.kind !== TrackKind.KIND_VIDEO || (this.callerIdentity && p.identity !== this.callerIdentity)) return;
     // Prefer the named FaceTime track, but accept any caller video (dev page, other bridges).
     if (this.stream && pub.name !== CALLER_VIDEO_TRACK) return;
     console.log(`[frames] reading video "${pub.name}" from ${p.identity}`);
+    this.latest = undefined;
+    const generation = ++this.generation;
     this.stream?.cancel().catch(() => {});
     const stream = new VideoStream(track);
     this.stream = stream;
     (async () => {
       for await (const ev of stream) {
+        if (this.closed || generation !== this.generation) break;
         this.latest = { frame: ev.frame, rotation: ev.rotation, at: Date.now() };
       }
     })().catch((e) => console.warn('[frames] stream ended', e?.message ?? e));
   };
 
   get hasVideo() {
-    return !!this.latest && Date.now() - this.latest.at < 3000;
+    return !this.closed && !!this.latest && Date.now() - this.latest.at < 3000;
   }
 
   /** Waits briefly so the caller's hand settles, then returns the newest frame as JPEG. */
@@ -69,6 +74,7 @@ export class FrameGrabber {
   }
 
   close() {
+    this.closed = true; this.generation++; this.latest = undefined;
     this.room.off(RoomEvent.TrackSubscribed, this.onTrack);
     this.stream?.cancel().catch(() => {});
   }

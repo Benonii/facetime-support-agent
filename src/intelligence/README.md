@@ -274,3 +274,41 @@ or claim the problem was resolved.
 Test gotcha: offline tests importing the LiveKit native renderer must call the
 SDK's `dispose()` after closing the card, otherwise native background resources
 keep the Node test process alive. `src/screens/card.test.ts` demonstrates teardown.
+
+
+## Live voice and camera loop (hackathon)
+
+The voice agent now exposes one `analyze_device` tool. A spoken request such as
+“this is broken”, “look at this” or “take the photo” starts capture immediately
+(with the existing 400 ms settle). If the agent first asks for another angle,
+it waits for the caller’s “ready” before capturing again. No camera polling
+triggers inference and no manual shutter is required.
+
+The tool acknowledges through LiveKit’s nonblocking tool update, sends one
+frozen JPEG through observation → plan → target annotation, then returns one
+instruction to Realtime for speech. Existing CallState fields carry the matching
+photo, step and target to `/phone` and GuideCard. A single reminder is sent after
+15 seconds if still processing. Missing video and failures ask for another view
+or retry. Verification describes evidence and asks whether the task worked.
+
+Run with the usual local credentials and the same AGENT_NAME/LiveKit project as
+Ben’s server. The server must be reachable at SERVER_URL for native /phone images.
+Use `npm run agent` for the API intelligence provider or `npm run agent:cli` for
+the signed-in Codex CLI provider. Both still need OPENAI_API_KEY for Realtime
+voice. No credentials or login files are committed.
+
+Recorded MacBook checks on this integration: the CLI provider (gpt-6.1-sol)
+selected the destination correctly before and after a misplaced connector, in
+26 and 34 seconds. The default API vision model (gpt-5) returned incorrect port
+geometry in the same check; choose the CLI route for that demonstration, or
+validate the configured API vision model on the actual demo device first.
+An isolated real LiveKit + OpenAI Realtime call also passed: a prerecorded spoken
+request and a photo published as the camera track triggered the actual tool;
+looking → diagnosing → guiding events arrived and agent audio returned after
+publication. This checks transport and voice orchestration, not real phone
+camera permissions or a moving handheld view.
+
+For hackathon scope, cancellation suppresses obsolete state and speech; it does
+not terminate an already-running intelligence provider operation. The whole
+request stops waiting after 90 seconds. Display receipt acknowledgements and
+full provider cancellation remain deferred.
