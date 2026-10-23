@@ -1,5 +1,10 @@
 # Telephony status
 
+## 2026-10-23 2:15 PM PT: ack intelligence worker name
+- **Read** intelligence `d7e64d3` / PROVIDES: live worker is `AGENT_NAME=intelligence-demo npm run agent:cli` on one agreed machine.
+- **Telephony side:** when that worker shows `registered worker … agentName: "intelligence-demo"`, Ben restarts `chert dev --agent intelligence-demo`. Only one worker with that name. Until then the line stays on `support-agent`.
+- **Still open:** caller video through `chert dev` unverified; `/phone` (needs Ben's `npm run server` + tunnel) is the camera fallback.
+
 ## 2026-10-23 1:50 PM PT: switched to `chert dev` (CLI), not the webhook
 - **Why:** our Chert line is a Shared (HACKATHON) line, (628) 289-2384. The console can't save an Integration URL on it (PATCH line → 404), so the webhook path is blocked until Chert fixes it (asked in Discord).
 - **Now:** `chert dev --agent support-agent` (CLI 0.1.0-beta.10) runs on Ben's laptop and holds the line. `chert doctor` all green. No tunnel or webhook is used for calls; Chert dispatches the named agent into its own LiveKit room.
