@@ -1,5 +1,15 @@
 # Intelligence status (part 3, Nikhil)
 
+## 2026-10-23: voice → intelligence interface implemented (hackathon slice)
+- New composite analyze_device starts capture at verbal tool invocation, acknowledges through LiveKit ctx.update, gives one 15s reminder, uses one JPEG for observe/plan/annotation, and returns the instruction to Realtime for speech. Follow-up ready/next/verify and explicit stop are wired. Existing CallState + ScreenCue send matching images to /phone and GuideCard; no shared contract changes.
+- Preserved Ben’s greeting/brand/KB/frontend. INT-014 frontend guard landed independently in fe80d11; later c6404a0 retains the dimmed photo while a new look is pending. No frontend files changed by this slice.
+- Focused checks: 4 new controller tests + 5 existing bridge tests pass; typecheck passes. One narrow read-only review found lost ticket evidence on cancel, fixed before capture of diagnosis. No broad suite per Nikhil’s hackathon instruction.
+- Real intelligence checks: CLI gpt-6.1-sol placed the destination circle correctly on IMG_1051 and misplaced-connector IMG_1052 in 26s and 34s. Default API gpt-5 produced incorrect grounding on the same images; recommend CLI for this MacBook demo (credentials still separate from Realtime voice).
+- Isolated real LiveKit/Realtime call with prerecorded spoken input + a photo camera track passed: verbal tool selection, waiting updates, looking/diagnosing/guiding events, published agent video, and returned agent audio. Temporary room/worker cleaned up. Actual handheld /phone call still to verify.
+- Ruling from Nikhil’s scope update: defer new DTOs, display acknowledgement, provider-process abort propagation, exhaustive tests and deployment machinery. Cancel suppresses late state/speech; underlying inference may finish in background. 90s request wait cap.
+- Run after pulling integration: restart ONE agreed agent worker with matching AGENT_NAME and SERVER_URL. For this verified image case use npm run agent:cli; voice still requires OPENAI_API_KEY. Do not run a second worker under the same name beside Ben’s worker.
+
+
 ## 2026-10-23: implementing hackathon voice → intelligence loop
 - Nikhil authorized implementation and prioritizes functionality over broad hardening/tests. Baseline 645609d; branch intelligence-cli-demo.
 - Scope: src/agent composite visual tool, fresh caller capture, asynchronous waiting updates, matching image/instruction output. Preserve Ben’s Shure greeting, KB and frontend. No shared DTO changes.

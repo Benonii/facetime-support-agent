@@ -137,3 +137,18 @@ propose a supported next step, then display and speak that same step with a targ
 only if the relevant port is visible. Connecting a cable in a comparison photo
 must not automatically produce a resolved ticket. Missing images, timeouts, and
 invalid outputs must remain failures/requests for more evidence, not mock success.
+
+
+## Live composite visual request
+
+`src/agent/visual-request.ts` implements the voice/image request lifecycle;
+`src/agent/visual-tools.ts` registers `analyze_device` and `cancel_analysis`.
+The main agent uses these instead of asking Realtime to chain look/find/show.
+Existing `createDeviceTools` remains available to compatible callers/tests.
+
+Inputs: verbal question, guide/verify mode, optional existing step number or
+new-problem reset. Capture occurs at invocation; one JPEG goes through the
+intelligence phases. Outputs: compact instruction/facts/next view to Realtime,
+and the matching snapshot/observation/step with paired ScreenCue IDs to the
+existing event stream and GuideCard. Waiting uses looking/diagnosing stages;
+no new stage, route or DTO is introduced. Frontend keeps owning rendering.
