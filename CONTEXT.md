@@ -1,6 +1,6 @@
 # Project context: FaceTime video support agent
 
-Read this before building any part. It is the shared mental model, the contracts between parts,
+Read this before building any part. For one real call traced step by step through the 4 parts with example data, see CALL-WALKTHROUGH.md. It is the shared mental model, the contracts between parts,
 and the rules that are easy to break. Feed it to your AI coding tool as context.
 
 ## What we are building (one paragraph)
