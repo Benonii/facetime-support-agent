@@ -1,5 +1,11 @@
 # Intelligence status (part 3, Nikhil)
 
+## 2026-10-23: presentation ownership handed to screens and voice
+
+- Nikhil explicitly requested a message and repo handoff so the other owners can make the intelligence results clear and attractive. Published [SCREENS-VOICE-HANDOFF.md](SCREENS-VOICE-HANDOFF.md), with exact fields, examples, verified cases, renderer constraints, and live setup limits.
+- INT-012 assigns visual presentation to screens; INT-013 assigns spoken presentation and synchronization to voice. These are handoff requests, not received acknowledgments. No screens/agent sessions were identifiable on the board, so delivery uses a repo issue and board broadcast addressed to those roles.
+- Documentation only; corrected stale planned/pending language in PROVIDES. No code changes or repeated test suite. Actual photos remain local; the repo includes the data contract and replay instructions.
+
 ## 2026-10-23: CLI intelligence and live tool integration landed on main
 
 - **Code on main:** `d7e64d3` (includes the provider/runner, required-image contract and matching caller). Nikhil explicitly authorized direct main pushes and the agent integration; this supersedes the earlier PR-only/waiting-for-owner notes below. No DTO expansion beyond required FixRequest.jpeg. PR #6/#7 are superseded by the integrated main checkpoint.

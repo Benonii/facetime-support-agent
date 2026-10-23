@@ -1,6 +1,8 @@
 # Intelligence provides (part 3, `src/intelligence/`)
 
 Owner: Nikhil. Approved plan and evidence status: [STATUS.md](STATUS.md).
+Presentation owners: start with [the screens and voice handoff](SCREENS-VOICE-HANDOFF.md).
+
 Implementation includes Codex CLI and OpenAI providers, recorded-photo outputs,
 and the existing LiveKit tools wired through a serialized per-call bridge.
 See the newest STATUS entry for the exact pushed commit and verification.
@@ -35,7 +37,7 @@ findFix({ jpeg, observation, symptom }): Promise<FixPlan>
 
 - `jpeg` is a nonempty, upright JPEG `Buffer`, max 1280 px, not a URL or an image
   description. `findFix` requires the **same frame used for its observation**.
-  Required `FixRequest.jpeg` is the pending shared-contract change.
+  Required `FixRequest.jpeg` is implemented on main.
 - `observe` reports current visible device, lights, ports, findings, next view,
   confidence, and optional target. `previous` supplies context, not current facts.
 - `findFix` receives the image itself plus observation and symptom, retrieves
@@ -69,7 +71,7 @@ not change the existing `lastSnapshot` transport or introduce a new screen DTO.
 
 ## Provider and testing boundary
 
-- Planned: `INTELLIGENCE_PROVIDER=codex-cli|openai`; local photo demo defaults to
+- Implemented: `INTELLIGENCE_PROVIDER=codex-cli|openai`; local photo demo defaults to
   Codex CLI. Existing OpenAI implementation and `MOCK_INTELLIGENCE=1` remain.
 - CLI requires an authenticated local Codex installation on the machine running
   intelligence. It is a local demo option, not a hosted deployment prerequisite.
@@ -77,17 +79,17 @@ not change the existing `lastSnapshot` transport or introduce a new screen DTO.
   Keenable uses `KEENABLE_API_KEY` when configured, otherwise the existing public
   endpoint. Credentials stay in gitignored `.env.local`.
 - Existing runner entrypoint: `npm run try:intel -- photo.jpg "no internet"`.
-  Provider selection, returned-step selection, saved outputs, and PNG export are
-  planned extensions; the final runnable flags will be documented when tested.
+  Supports `--step`, `--out`, and `--facts`; writes processed.jpg, result.json,
+  and preview.png (or failure.json). See [runner guidance](../../src/intelligence/README.md).
 - `MOCK_INTELLIGENCE=1` is canned integration data, never proof of model accuracy.
-- CLI requests will be serialized with a 45-second execution timeout per request.
+- CLI requests are serialized with a 45-second execution timeout per request.
   One demo has multiple calls plus search; do not assume it fits a 5-second
   telephony webhook or the probe's 5.3-second latency.
 
 No intelligence work is required in telephony's accept path. The agent owns
 progress speech and how recoverable intelligence failures are surfaced to callers.
 
-## Pre-build wiring example for parts 2 and 4
+## Implemented wiring pattern for parts 2 and 4
 
 This is integration pseudocode for the required-image contract, not a new API or
 a claim that the full flow is tested. The tool arguments visible to the voice

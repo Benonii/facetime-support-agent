@@ -14,6 +14,11 @@ Part-owner acknowledgment and live-call acceptance remain separate.
 
 ## From agent (part 2)
 
+- [ ] **INT-013 — Take the voice presentation handoff.** Tune explanation, pacing,
+  waiting/retry behavior and synchronization with the selected display step.
+  Preserve the existing tool bridge; confirm live voice/video setup with Ben.
+  [Concrete handoff](SCREENS-VOICE-HANDOFF.md).
+
 - [ ] **INT-001 — Coordinate the required-image contract before integration.** Target:
   `FixRequest { jpeg: Buffer; observation: Observation; symptom: string }`.
   This changes `src/contracts.ts`; it is implemented locally in `4a7356c` but not
@@ -40,6 +45,11 @@ Part-owner acknowledgment and live-call acceptance remain separate.
   the combined demo; the fixed-photo runner needs no voice session.
 
 ## From screens (part 4)
+
+- [ ] **INT-012 — Take ownership of visual presentation.** Make the actual photo,
+  selected instruction, optional target, supporting facts and waiting/no-target
+  states clear and attractive. Design is yours; preserve matching image/target
+  semantics and existing CallState. [Concrete handoff](SCREENS-VOICE-HANDOFF.md).
 
 - [ ] **INT-006 — Confirm the existing bridge is sufficient before the visual handoff.**
   Render `CallState.lastSnapshot` with `observation.target.box` and `step.text`;
