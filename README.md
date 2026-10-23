@@ -8,15 +8,15 @@ it books a technician with the diagnosis attached. Every fix on the call is a tr
 iPhone (FaceTime Video)
    │
    ▼
-Chert line ──POST call.incoming──▶ src/server.ts  /webhooks/chert   (Hono, public via cloudflared)
+Chert line ──POST call.incoming──▶ src/telephony/server.ts  /webhooks/chert   (Hono, public via cloudflared)
    │                                 │ createRoom + dispatch "support-agent" (warm pool of 1)
    │◀──── accept {livekit_url, bridge token, agent identity} ───┘
    │
    ▼
-LiveKit room ── facetime-remote-audio ─▶ src/agent.ts  (OpenAI Realtime voice, tools)
+LiveKit room ── facetime-remote-audio ─▶ src/agent/  (OpenAI Realtime voice, tools)
              ── facetime-remote-video ─▶   FrameGrabber (newest frame only)
-             ◀─ agent audio                 look_at_device → vision.ts (lights, ports, target box)
-             ◀─ agent-guide-card video      find_fix       → kb.ts (brand PLAYBOOK + Keenable web results)
+             ◀─ agent audio                 look_at_device → intelligence/vision.ts (lights, ports, target box)
+             ◀─ agent-guide-card video      find_fix       → intelligence/kb.ts (brand PLAYBOOK + Keenable web results)
                 (their device, part         show_step      → re-look, circle the part on their screen
                  circled, step text)        check_result / mark_resolved / book_technician (+ Chert iMessage)
                                      │
@@ -61,14 +61,13 @@ chert dev --agent support-agent
 ```
 Same agent. No caller video on this path, so look_at_device returns "no video". Use only if B is blocked.
 
-## Files
+## The 4 parts
 
-| file | what |
-| - | - |
-| `src/agent.ts` | prompt, 6 tools, session wiring |
-| `src/frames.ts` | subscribes to caller video, `grabJpeg()` |
-| `src/vision.ts` | frame → `Observation` JSON (lights, ports, findings, target box) |
-| `src/kb.ts` | `PLAYBOOK` (edit for your demo router) + Keenable search → `FixPlan` |
-| `src/card.ts` | the video the caller sees: their device with the part circled, step text |
-| `src/server.ts` | Chert webhook, warm pool, dev session, SSE dashboard |
-| `public/` | `dev-phone.html`, `dashboard.html` |
+Shared DTOs are in `src/contracts.ts`. Full detail in [CONTEXT.md](CONTEXT.md).
+
+| # | part | folder | test alone |
+| - | - | - | - |
+| 1 | Telephony: Chert webhook, warm room, SSE | `src/telephony/` | `/phone` page |
+| 2 | Agent: voice, prompt, tools | `src/agent/` | `npm run agent:mock` |
+| 3 | Intelligence: vision + fix plan | `src/intelligence/` | `npm run try:intel -- photo.jpg "no internet"` |
+| 4 | Screens: caller guide card, dashboard | `src/screens/`, `public/` | `npm run smoke` |

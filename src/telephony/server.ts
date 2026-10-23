@@ -4,7 +4,7 @@ import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import { AccessToken, AgentDispatchClient, RoomServiceClient } from 'livekit-server-sdk';
-import type { CallEvent } from './types.js';
+import type { CallEvent, ChertDecision, ChertEvent, JobMetadata } from '../contracts.js';
 
 const LK_URL = process.env.LIVEKIT_URL!;
 const LK_HTTP = LK_URL.replace(/^wss:/, 'https:').replace(/^ws:/, 'http:');
@@ -28,7 +28,8 @@ interface Prepared {
 async function prepareRoom(callId: string, deadline: number): Promise<Prepared> {
   const room = `support-${callId.slice(0, 8)}-${Date.now().toString(36)}`;
   await rooms.createRoom({ name: room, emptyTimeout: 600, departureTimeout: 20 });
-  await dispatch.createDispatch(room, AGENT_NAME, { metadata: JSON.stringify({ call_id: callId }) });
+  const metadata: JobMetadata = { call_id: callId };
+  await dispatch.createDispatch(room, AGENT_NAME, { metadata: JSON.stringify(metadata) });
   while (Date.now() < deadline) {
     const ps = await rooms.listParticipants(room);
     const agent = ps.find((p) => p.kind === PARTICIPANT_KIND_AGENT && p.tracks.length > 0); // joined + published its card
@@ -68,7 +69,7 @@ function publish(ev: CallEvent) {
 // ---------- HTTP ----------
 
 const app = new Hono();
-const page = (f: string) => readFileSync(new URL(`../public/${f}`, import.meta.url), 'utf8');
+const page = (f: string) => readFileSync(new URL(`../../public/${f}`, import.meta.url), 'utf8');
 
 app.get('/', (c) => c.html(page('dashboard.html').replace('__TRUCK_ROLL_COST__', String(Number(process.env.TRUCK_ROLL_COST ?? 150)))));
 app.get('/phone', (c) => c.html(page('dev-phone.html')));
@@ -86,7 +87,7 @@ async function prepareForCall(callId: string, deadline: number): Promise<Prepare
 }
 
 app.post('/webhooks/chert', async (c) => {
-  const ev = await c.req.json<{ event_id: string; type: string; created_at: string; data: { call_id: string; media?: { video?: boolean } } }>();
+  const ev = await c.req.json<ChertEvent>();
   const callId = ev.data?.call_id;
   console.log(`[chert] ${ev.type} ${callId}`);
 
@@ -97,7 +98,7 @@ app.post('/webhooks/chert', async (c) => {
       if (!seen.has(callId)) seen.set(callId, prepareForCall(callId, deadline));
       const prepared = await seen.get(callId)!;
       const token = await mintToken(prepared.room, `chert-bridge-${callId.slice(0, 8)}`, 3600);
-      return c.json({
+      return c.json<ChertDecision>({
         action: 'accept',
         livekit_url: LK_URL,
         participant_token: token,
@@ -106,7 +107,7 @@ app.post('/webhooks/chert', async (c) => {
     } catch (e) {
       seen.delete(callId);
       console.warn('[chert] declining:', (e as Error).message);
-      return c.json({ action: 'decline' });
+      return c.json<ChertDecision>({ action: 'decline' });
     }
   }
 

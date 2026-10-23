@@ -11,9 +11,10 @@ import {
   VideoStream,
 } from '@livekit/rtc-node';
 import sharp from 'sharp';
+import { TRACKS } from '../contracts.js';
 
 // Chert's bridge publishes the caller's camera under this name. The dev phone page uses it too.
-export const CALLER_VIDEO_TRACK = 'facetime-remote-video';
+export const CALLER_VIDEO_TRACK = TRACKS.callerVideo;
 
 /**
  * Keeps only the newest decoded frame from the caller's camera.

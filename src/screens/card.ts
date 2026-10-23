@@ -1,6 +1,6 @@
 import { createCanvas, loadImage, type Image } from '@napi-rs/canvas';
 import { LocalVideoTrack, type Room, TrackPublishOptions, TrackSource, VideoBufferType, VideoFrame, VideoSource } from '@livekit/rtc-node';
-import type { CallState } from './types.js';
+import { type CallerScreen, type CallState, TRACKS } from '../contracts.js';
 
 // Portrait, because the caller is on an iPhone.
 const W = 720;
@@ -15,7 +15,7 @@ const LED: Record<string, string> = { green: '#3ddc97', white: '#f2f2f2', blue: 
  * The agent's "face" on FaceTime: the customer's own device, frozen, with the part to touch circled,
  * plus the current step in big type. Two frames alternate so the circle blinks.
  */
-export class GuideCard {
+export class GuideCard implements CallerScreen {
   private source = new VideoSource(W, H);
   private canvas = createCanvas(W, H);
   private frames: VideoFrame[] = [];
@@ -25,7 +25,7 @@ export class GuideCard {
   private snapSrc?: string;
 
   async publish(room: Room) {
-    const track = LocalVideoTrack.createVideoTrack('agent-guide-card', this.source);
+    const track = LocalVideoTrack.createVideoTrack(TRACKS.agentVideo, this.source);
     const opts = new TrackPublishOptions();
     opts.source = TrackSource.SOURCE_CAMERA;
     await room.localParticipant!.publishTrack(track, opts);

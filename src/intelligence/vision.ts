@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { zodTextFormat } from 'openai/helpers/zod';
-import { Observation } from './types.js';
+import { Observation, type ObserveRequest } from '../contracts.js';
 
 let client: OpenAI | undefined;
 const openai = () => (client ??= new OpenAI());
@@ -15,10 +15,7 @@ The customer is pointing their camera at a device that is not working (usually a
 - Only report what you can see. Never invent labels or model numbers.
 - You get the notes from earlier frames. Merge, do not forget earlier findings.`;
 
-export async function observeFrame(
-  jpeg: Buffer,
-  opts: { focus?: string; step?: string; previous?: Observation },
-): Promise<Observation> {
+export async function observe({ jpeg, ...opts }: ObserveRequest): Promise<Observation> {
   const model = process.env.VISION_MODEL ?? 'gpt-5';
   const res = await openai().responses.parse({
     model,

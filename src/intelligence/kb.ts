@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { zodTextFormat } from 'openai/helpers/zod';
-import { FixPlan, type Observation } from './types.js';
+import { FixPlan, type FixRequest } from '../contracts.js';
 
 let client: OpenAI | undefined;
 const openai = () => (client ??= new OpenAI());
@@ -40,7 +40,7 @@ Fiber / PON / LOS light RED or blinking red -> fiber signal lost. Check the gree
 All lights blinking together for > 5 minutes after power cycle -> firmware stuck. Hold reset 10 s ONLY if the agent confirms; else technician.
 `;
 
-export async function lookupFix(o: Observation, symptom: string): Promise<FixPlan> {
+export async function findFix({ observation: o, symptom }: FixRequest): Promise<FixPlan> {
   const lights = o.indicators.map((l) => `${l.label} ${l.color} ${l.pattern}`).join(', ');
   const query = `${o.device.brand} ${o.device.model} ${o.device.type} ${lights} troubleshooting`.replace(/\s+/g, ' ').trim();
   let web: KeenableResult[] = [];

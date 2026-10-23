@@ -2,10 +2,12 @@
   "name": "facetime-support-agent",
   "version": "1.0.0",
   "scripts": {
-    "agent": "tsx --env-file=.env.local src/agent.ts dev",
-    "agent:start": "tsx --env-file=.env.local src/agent.ts start",
-    "server": "tsx watch --env-file=.env.local src/server.ts",
+    "agent": "tsx --env-file=.env.local src/agent/agent.ts dev",
+    "agent:mock": "MOCK_INTELLIGENCE=1 tsx --env-file=.env.local src/agent/agent.ts dev",
+    "agent:start": "tsx --env-file=.env.local src/agent/agent.ts start",
+    "server": "tsx watch --env-file=.env.local src/telephony/server.ts",
     "tunnel": "cloudflared tunnel --url http://localhost:8787",
+    "try:intel": "tsx --env-file-if-exists=.env.local src/intelligence/try.ts",
     "typecheck": "tsc -p .",
     "smoke": "tsx --env-file-if-exists=.env.local src/smoke.ts"
   },

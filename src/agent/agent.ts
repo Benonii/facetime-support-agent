@@ -3,14 +3,14 @@ import { fileURLToPath } from 'node:url';
 import { AutoSubscribe, cli, defineAgent, llm, ServerOptions, voice } from '@livekit/agents';
 import { realtime } from '@livekit/agents-plugin-openai';
 import { z } from 'zod';
-import { GuideCard } from './card.js';
+import type { CallEvent, CallState, JobMetadata } from '../contracts.js';
+import { createIntelligence } from '../intelligence/index.js';
+import { GuideCard } from '../screens/card.js';
 import { FrameGrabber, thumb } from './frames.js';
 import { sendIMessage } from './imessage.js';
-import { lookupFix } from './kb.js';
-import type { CallEvent, CallState } from './types.js';
-import { observeFrame } from './vision.js';
 
 const BRAND = process.env.BRAND_NAME ?? 'Lumen Fiber';
+const intelligence = createIntelligence();
 
 const INSTRUCTIONS = `You are Alex, a ${BRAND} support technician on a live FaceTime video call. You are an AI; say so if asked.
 The customer's internet (or device) is not working. Your job: fix it on this call so no technician visit is needed.
@@ -36,7 +36,7 @@ Never ask for a factory reset unless the plan says so and the customer agrees.`;
 export default defineAgent({
   entry: async (ctx) => {
     await ctx.connect(undefined, AutoSubscribe.SUBSCRIBE_ALL);
-    const callId = safeJson(ctx.job.metadata)?.call_id ?? ctx.room.name ?? 'unknown';
+    const callId = safeJson<JobMetadata>(ctx.job.metadata)?.call_id ?? ctx.room.name ?? 'unknown';
 
     // Publish our video right away so the caller sees the card as soon as FaceTime connects.
     const card = new GuideCard();
@@ -59,7 +59,7 @@ export default defineAgent({
       if (!jpeg) return null;
       state.lastSnapshot = await thumb(jpeg, 640);
       await emit();
-      const obs = await observeFrame(jpeg, { focus, step: state.step?.text, previous: state.observation });
+      const obs = await intelligence.observe({ jpeg, focus, step: state.step?.text, previous: state.observation });
       if (obs.device_visible) {
         state.observation = obs;
         state.looks++;
@@ -91,7 +91,7 @@ export default defineAgent({
           if (!state.observation) return { error: 'Look at the device first with look_at_device.' };
           state.stage = 'diagnosing';
           await emit();
-          state.plan = await lookupFix(state.observation, symptom);
+          state.plan = await intelligence.findFix({ observation: state.observation, symptom });
           state.stage = 'guiding';
           await emit();
           return state.plan;
@@ -199,9 +199,9 @@ function post(ev: CallEvent) {
   fetch(`${url}/api/events`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(ev) }).catch(() => {});
 }
 
-function safeJson(s?: string) {
+function safeJson<T>(s?: string): T | undefined {
   try {
-    return s ? JSON.parse(s) : undefined;
+    return s ? (JSON.parse(s) as T) : undefined;
   } catch {
     return undefined;
   }

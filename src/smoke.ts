@@ -1,8 +1,8 @@
 // Offline smoke test: renders the FaceTime guide card to PNG. No API keys needed.
 import { writeFileSync } from 'node:fs';
 import sharp from 'sharp';
-import { GuideCard } from './card.js';
-import type { CallState, Observation } from './types.js';
+import type { CallState, Observation } from './contracts.js';
+import { GuideCard } from './screens/card.js';
 
 // Fake router photo: dark box with 4 lights and 4 ports.
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="960"><rect width="1280" height="960" fill="#2b2b2b"/>

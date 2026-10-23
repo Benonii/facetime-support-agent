@@ -18,11 +18,11 @@ technician with the diagnosis attached. Business pitch: every fix on the call is
 Customer iPhone ──FaceTime Video──▶ Chert line
                                       │ 1. POST call.incoming  (HTTPS webhook)
                                       ▼
-                              src/server.ts  (Hono, always on, behind cloudflared tunnel)
+                              src/telephony/server.ts  (Hono, always on, behind cloudflared tunnel)
                                       │ 2. hands over a pre-made "warm" LiveKit room with the agent already in it
                                       │ 3. replies {accept, livekit_url, bridge token, agent identity}  < 5 s
                                       ▼
-Chert bridge joins the LiveKit room ◀────────────────────────────────▶ src/agent.ts (LiveKit Agents worker, always on;
+Chert bridge joins the LiveKit room ◀────────────────────────────────▶ src/agent/ (LiveKit Agents worker, always on;
    publishes  facetime-remote-audio  (caller mic)                         one fresh job per call)
               facetime-remote-video  (caller camera)                      - OpenAI Realtime: hears + speaks
    subscribes to agent audio + agent video                                - tools (below) do vision, fix plan, tickets
@@ -36,9 +36,9 @@ Chert bridge joins the LiveKit room ◀─────────────�
 | --- | --- | --- |
 | Chert | Owns the FaceTime number, asks our webhook to accept, bridges caller audio/video into our LiveKit room and our audio/video back | No speech-to-text, no talking, no vision, no logic |
 | LiveKit Cloud | Hosts the room (a private meeting) and carries the media tracks | Doesn't create rooms on its own in our setup; our server does |
-| `src/server.ts` | Webhook, warm room pool, LiveKit room + dispatch + token, dashboard + event stream, dev-session for the test page | No AI |
-| `src/agent.ts` | Voice conversation (OpenAI Realtime, speech in and out in one model), calls tools | Doesn't stream video to the model; tools grab single frames |
-| Tools | Vision on one frame, fix plan, circle, tickets | |
+| Telephony (`src/telephony`) | Webhook, warm room pool, LiveKit room + dispatch + token, dashboard + event stream, dev-session for the test page | No AI |
+| Agent (`src/agent`) | Voice conversation (OpenAI Realtime, speech in and out in one model), calls tools | Doesn't stream video to the model; tools grab single frames |
+| Intelligence + Screens | Vision on one frame, fix plan; the circled guide card and dashboard | |
 
 ## Hard facts and rules (easy to get wrong)
 
@@ -54,77 +54,92 @@ Chert bridge joins the LiveKit room ◀─────────────�
 10. **Secrets live in `.env.local` only** (gitignored). Never commit keys. Never log tokens or caller media.
 11. **Fresh bridge token per call**, scoped to one room, join+publish+subscribe, identity different from the agent's, expires ≤ 2 h.
 
-## Contracts between parts
+## The 4 parts (build them in parallel)
 
-### Chert → server (`POST /webhooks/chert`)
+All DTOs live in **`src/contracts.ts`**. That file is the only thing parts share. Change it first, tell the team, then update both sides.
 
+```
+ 1 TELEPHONY ──JobMetadata──▶ 2 AGENT ──ObserveRequest / FixRequest──▶ 3 INTELLIGENCE
+ (src/telephony)              (src/agent) ◀──── Observation / FixPlan ──── (src/intelligence)
+      ▲  │                       │
+      │  └──SSE CallEvent──▶ 4 SCREENS ◀──CallState (CallerScreen.render)──┘
+      └──POST /api/events CallEvent── agent      (src/screens, public/dashboard.html)
+```
+
+| # | Part | Folder | Owns | Input DTO | Output DTO | Build alone with |
+| - | - | - | - | - | - | - |
+| 1 | Telephony | `src/telephony/server.ts` | Chert webhook, warm room, bridge token, agent dispatch, event relay, `/phone` dev page | `ChertEvent`, `CallEvent` | `ChertDecision`, `JobMetadata`, SSE `CallEvent` | `/phone` page + `npm run agent:mock` |
+| 2 | Agent | `src/agent/` | Voice (OpenAI Realtime), prompt, 6 tools, frame grab, `CallState` | `JobMetadata`, caller tracks | `ObserveRequest`, `FixRequest`, `CallState`, `CallEvent` | `npm run agent:mock` (no vision keys) |
+| 3 | Intelligence | `src/intelligence/` | Vision on one frame, playbook + Keenable fix plan | `ObserveRequest`, `FixRequest` | `Observation`, `FixPlan` | `npm run try:intel -- photo.jpg "no internet"` |
+| 4 | Screens | `src/screens/card.ts`, `public/dashboard.html` | What the caller sees (circle + step), the projector dashboard | `CallState`, SSE `CallEvent` | `agent-guide-card` video track | `npm run smoke` (renders smoke-card.png) |
+
+### DTOs (see `src/contracts.ts` for exact types)
+
+**1 to 2: `JobMetadata`** (dispatch metadata, JSON string): `{ call_id }`
+
+**2 to 3: `Intelligence` interface**
+```ts
+observe(req: ObserveRequest): Promise<Observation>   // ObserveRequest { jpeg: Buffer; focus?; step?; previous?: Observation }
+findFix(req: FixRequest): Promise<FixPlan>           // FixRequest { observation; symptom }
+```
+`Observation`: `device_visible`, `device {type, brand, model}`, `indicators[] {label, color, pattern}`,
+`ports[] {label, cable_connected}`, `findings[]`, `target {label, box:[x0,y0,x1,y1] 0..1} | null`, `next_shot`, `confidence`.
+`FixPlan`: `likely_cause`, `steps[]`, `needs_technician`, sources. `MOCK_INTELLIGENCE=1` swaps in canned answers (`src/intelligence/mock.ts`).
+
+**2 to 4: `CallerScreen` interface + `CallState`**
+```ts
+interface CallerScreen { publish(room); render(state: CallState); close() }
+CallState { callId, stage: 'waiting'|'looking'|'diagnosing'|'guiding'|'resolved'|'technician',
+            observation?, plan?, step? {n, text}, looks, ticket?, lastSnapshot? (jpeg data URL) }
+```
+The card circles `observation.target.box` over `lastSnapshot`.
+
+**2 to 1 to 4: `CallEvent`** (agent `POST /api/events`, server rebroadcasts on `GET /api/stream` SSE)
+```ts
+{ type: 'call.started', callId } | { type: 'state', callId, state: CallState } | { type: 'call.ended', callId }
+```
+
+**Chert to 1: `ChertEvent`** `POST /webhooks/chert`
 ```json
-{ "event_id": "…", "type": "call.incoming", "created_at": "2026-10-23T19:00:00Z",
+{ "event_id": "…", "type": "call.incoming", "created_at": "…",
   "data": { "call_id": "…", "line_id": "…", "media": { "audio": true, "video": true } } }
 ```
-Other types: `call.started`, `call.ended`, `call.failed` (reply `{"ok": true}`; on ended/failed delete the room).
-Events can repeat: same `call_id` must get the same room (server keeps a promise map `seen`).
+Other types `call.started|ended|failed` get `{"ok": true}`; ended/failed delete the room. Same `call_id` must get the same room.
 
-### Server → Chert (reply to `call.incoming`)
+**1 to Chert: `ChertDecision`** `{ action: "accept", livekit_url, participant_token, remote_participant_identity }` or `{ action: "decline" }`.
 
-```json
-{ "action": "accept", "livekit_url": "wss://…livekit.cloud",
-  "participant_token": "<fresh bridge JWT>", "remote_participant_identity": "<agent identity in room>" }
-```
-or `{ "action": "decline" }`.
-
-### Tracks in the room
+### Tracks in the room (`TRACKS` in contracts.ts)
 
 | Track | From | Kind |
 | --- | --- | --- |
-| `facetime-remote-audio` | Chert bridge (caller mic) | audio, source microphone |
+| `facetime-remote-audio` | Chert bridge (caller mic) | audio |
 | `facetime-remote-video` | Chert bridge (caller camera) | video |
 | agent audio | agent (OpenAI voice) | audio |
-| `agent-guide-card` | agent (`src/card.ts`) | video 720×1280, 10 fps |
+| `agent-guide-card` | screens (`src/screens/card.ts`) | video 720×1280, 10 fps |
 
-The dev test page (`/phone`) publishes the **same track names**, so agent code is identical in dev and on FaceTime.
+The `/phone` dev page publishes the **same track names**, so agent code is identical in dev and on FaceTime.
 
-### Agent → server (`POST /api/events`) → dashboard (`GET /api/stream`, SSE)
+### Agent tools (`src/agent/agent.ts`)
 
-```ts
-type CallEvent =
-  | { type: 'call.started'; callId: string }
-  | { type: 'state'; callId: string; state: CallState }   // sent on every change
-  | { type: 'call.ended'; callId: string };
-```
-`CallState`, `Observation`, `FixPlan`, `Ticket` are defined in `src/types.ts`. **Change types there first**, then both sides.
-
-### Tools the realtime model can call (`src/agent.ts`)
-
-| Tool | Input | What it does | Returns to model |
+| Tool | Input | Calls | Returns to model |
 | --- | --- | --- | --- |
-| `look_at_device` | `focus` | grab frame → `observeFrame()` (vision) → update state + card | lights, ports, findings, next_shot |
-| `find_fix` | `symptom` | `lookupFix()`: PLAYBOOK + Keenable web search → `FixPlan` | cause, steps, when to send a tech |
-| `show_step` | `n` | set step n, re-look so vision returns `target.box`, card circles it | step text, circled label |
-| `check_result` | – | re-look, compare lights before/after | before, now, findings |
+| `look_at_device` | `focus` | `intelligence.observe` | lights, ports, findings, next_shot |
+| `find_fix` | `symptom` | `intelligence.findFix` | cause, steps, when to send a tech |
+| `show_step` | `n` | `observe` with `step` set, so `target.box` circles the part | step text, circled label |
+| `check_result` | – | `observe`, compare lights | before, now, findings |
 | `mark_resolved` | – | ticket `resolved_on_call` | ticket id |
-| `book_technician` | name, address, window, phone | ticket `technician_booked`, optional iMessage via Chert | ticket id, window |
+| `book_technician` | name, address, window, phone | ticket + optional Chert iMessage | ticket id, window |
 
-Tool rule: return small JSON, never long text. The model reads results aloud in its own words.
+Tool rule: return small JSON, never long text.
 
-### Vision output (`Observation`, `src/types.ts`)
+### Good first tasks per part
 
-`device {type, brand, model}`, `indicators[] {label, color, pattern}`, `ports[] {label, cable_connected}`,
-`findings[]`, `target {label, box:[x0,y0,x1,y1] normalized 0..1} | null`, `next_shot`, `confidence`.
-`card.ts` draws the circle from `target.box` over the last snapshot.
+1. **Telephony:** Chert line to webhook through the tunnel, log timings, confirm `facetime-remote-video` arrives.
+2. **Agent:** tune `INSTRUCTIONS` for a < 90 s call, filler lines before slow tools, interruptions.
+3. **Intelligence:** accurate light colors + target box on our demo device, rewrite `PLAYBOOK`, faster `VISION_MODEL`.
+4. **Screens:** card look, circle accuracy, "Fixed" screen, dashboard KPIs (truck rolls avoided).
 
-## Files and owners (split the work here)
-
-| Area | Files | Good first tasks |
-| --- | --- | --- |
-| **Telephony + server** | `src/server.ts` | Get Chert line → webhook working through the tunnel; log timings; confirm `facetime-remote-video` arrives |
-| **Agent + prompt** | `src/agent.ts` | Tune `INSTRUCTIONS` for a < 90 s call; filler lines before slow tools; interruption handling |
-| **Vision** | `src/vision.ts`, `src/frames.ts` | Make light colors + target box accurate for our demo device; try faster `VISION_MODEL` |
-| **Knowledge** | `src/kb.ts` | Rewrite `PLAYBOOK` for the exact demo device; Keenable query quality |
-| **Caller screen** | `src/card.ts` | Look of the guide card; circle accuracy; "Fixed" screen |
-| **Dashboard + pitch** | `public/dashboard.html`, demo video, LinkedIn/X post | KPIs on the projector; record the < 2 min FaceTime demo |
-
-Keep changes inside your area; if you need a new field, add it to `src/types.ts` and tell the team.
+Stay inside your folder. Need a new field? Add it to `src/contracts.ts` and tell the team.
 
 ## Run it
 
@@ -132,7 +147,7 @@ Keep changes inside your area; if you need a new field, add it to `src/types.ts`
 npm install
 cp .env.example .env.local      # LIVEKIT_URL/KEY/SECRET, OPENAI_API_KEY, KEENABLE_API_KEY, BRAND_NAME
 npm run typecheck && npm run smoke   # smoke renders smoke-card.png, no keys needed
-npm run agent    # terminal 1: worker
+npm run agent    # terminal 1: worker (or agent:mock, no vision/search keys)
 npm run server   # terminal 2: http://localhost:8787  (dashboard /, test page /phone)
 npm run tunnel   # terminal 3: public https URL
 ```
