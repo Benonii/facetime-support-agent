@@ -28,7 +28,7 @@ Optional: `AGENT_NAME` (default `support-agent`, must match the agent), `PORT` (
 
 ## Test
 
-1. No keys: `npx tsx --test src/telephony/telephony.test.ts` (12 tests).
+1. No keys: `npx tsx --test src/telephony/telephony.test.ts` (15 tests).
 2. Real LiveKit, no Chert: `npm run agent:mock` and `npm run server`, wait for `[warm] ready`, then
    `npx tsx src/telephony/simulate-chert.ts`. Expect `accept in <100 ms`.
 3. Real FaceTime: `npm run tunnel`, set the Chert line's Integration URL to `https://<tunnel>/webhooks/chert`

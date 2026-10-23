@@ -15,6 +15,7 @@ export interface TelephonyConfig {
   warmPool: boolean;
   pollMs?: number; // how often to check whether the agent joined
   warmRetryMs?: number;
+  warmMaxAgeMs?: number; // replace the warm room this often (must stay under the room's 600 s emptyTimeout)
   log?: (msg: string) => void;
 }
 
@@ -48,7 +49,10 @@ export function createTelephony(lk: LiveKitOps, cfg: TelephonyConfig) {
     const room = `support-${callId.slice(0, 8)}-${Date.now().toString(36)}`;
     await lk.createRoom(room);
     const metadata: JobMetadata = { call_id: callId };
-    await lk.dispatchAgent(room, cfg.agentName, metadata);
+    await lk.dispatchAgent(room, cfg.agentName, metadata).catch((e) => {
+      lk.deleteRoom(room).catch(() => {});
+      throw e;
+    });
     while (Date.now() < deadline && !stopped) {
       const agentIdentity = await lk.readyAgent(room);
       if (agentIdentity) return { room, agentIdentity };
@@ -59,17 +63,26 @@ export function createTelephony(lk: LiveKitOps, cfg: TelephonyConfig) {
   }
 
   // ---------- Warm pool of 1: a room with the agent already inside, so call.incoming answers in ms ----------
+  // LiveKit closes a room nobody human joined after emptyTimeout (600 s), and an agent restart (`npm run agent`
+  // reloads on save) leaves the room without its agent. So the warm room is swapped for a fresh one every
+  // warmMaxAgeMs, and re-checked when a call takes it.
 
+  const warmMaxAgeMs = cfg.warmMaxAgeMs ?? 4 * 60_000;
   let warm: Promise<Prepared> | null = null;
   let warmReady = false;
+  const newWarm = () => prepareRoom(`warm-${randomUUID()}`, Date.now() + 30_000);
+  const drop = (room: string) => lk.deleteRoom(room).catch(() => {});
+
   function refillWarm() {
     if (stopped) return;
-    const p = prepareRoom(`warm-${randomUUID()}`, Date.now() + 30_000);
+    const p = newWarm();
     warm = p;
     p.then(
       (w) => {
-        if (warm === p) warmReady = true;
+        if (warm !== p) return; // a call took it while it warmed up
+        warmReady = true;
         log(`[warm] ready ${w.room}`);
+        scheduleRecycle(p, w);
       },
       (e) => {
         log(`[warm] failed: ${e.message}`);
@@ -82,6 +95,27 @@ export function createTelephony(lk: LiveKitOps, cfg: TelephonyConfig) {
     );
   }
 
+  /** Build the replacement first, then swap, so there is never a gap without a ready warm room. */
+  function scheduleRecycle(p: Promise<Prepared>, w: Prepared) {
+    sleep(warmMaxAgeMs).then(() => {
+      if (stopped || warm !== p) return;
+      const next = newWarm();
+      next.then(
+        (nw) => {
+          if (stopped || warm !== p) return void drop(nw.room); // a call took the old one and refilled already
+          warm = next;
+          drop(w.room);
+          log(`[warm] recycled ${w.room} → ${nw.room}`);
+          scheduleRecycle(next, nw);
+        },
+        (e) => {
+          log(`[warm] recycle failed: ${e.message}`);
+          scheduleRecycle(p, w); // keep the old one (the take-time check guards it) and try again later
+        },
+      );
+    });
+  }
+
   /** Take the warm room (synchronously, so two calls never share it), else build a fresh one. */
   async function prepareForCall(callId: string, deadline: number): Promise<Prepared> {
     const w = warm;
@@ -92,7 +126,14 @@ export function createTelephony(lk: LiveKitOps, cfg: TelephonyConfig) {
       // A warm room still warming up gets half the budget; then fall back to a fresh room.
       const half = sleep(Math.max(0, (deadline - Date.now()) / 2)).then(() => null);
       const got = await Promise.race([w.catch(() => null), half]);
-      if (got) return got;
+      // Is the agent still in it? One listParticipants round trip, and it catches a closed room or a dead agent.
+      if (got && (await lk.readyAgent(got.room).catch(() => null)) === got.agentIdentity) return got;
+      if (got) {
+        log(`[warm] ${got.room} lost its agent, using a fresh room`);
+        drop(got.room);
+      } else {
+        w.then((late) => drop(late.room), () => {}); // nobody will use it now; free the agent
+      }
     }
     return prepareRoom(callId, deadline);
   }
@@ -125,9 +166,11 @@ export function createTelephony(lk: LiveKitOps, cfg: TelephonyConfig) {
     log(`[chert] ${ev.type} ${callId}`);
 
     if (ev.type === 'call.incoming') {
-      // Chert's clock and ours can disagree; never plan past our own budget either.
+      // Chert's clock and ours can disagree; never plan past our own budget either. If Chert's clock is behind ours,
+      // created_at looks old and the deadline would already be past, so a cold room still gets a short try.
       const created = Date.parse(ev.created_at);
-      const deadline = Math.min(Number.isFinite(created) ? created + cfg.budgetMs : Infinity, t0 + cfg.budgetMs);
+      const fromChert = Number.isFinite(created) ? created + cfg.budgetMs : Infinity;
+      const deadline = Math.max(Math.min(fromChert, t0 + cfg.budgetMs), t0 + Math.min(1500, cfg.budgetMs));
       try {
         // Retries and concurrent duplicates must get the same room, not a second agent.
         if (!seen.has(callId)) seen.set(callId, prepareForCall(callId, deadline));

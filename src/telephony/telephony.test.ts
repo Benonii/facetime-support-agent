@@ -1,4 +1,4 @@
-// Run: npm run test:telephony   (no keys, no network: LiveKit is faked)
+// Run: npx tsx --test src/telephony/telephony.test.ts   (no keys, no network: LiveKit is faked)
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 import type { ChertDecision, JobMetadata } from '../contracts.js';
@@ -25,9 +25,12 @@ function fakeLiveKit(joinDelayMs = 50) {
     },
     async deleteRoom(room) {
       deleted.push(room);
+      joinAt.delete(room);
     },
   };
-  return { lk, created, deleted, dispatched };
+  /** The agent in `room` goes away (worker restart, or LiveKit closed the room). */
+  const kill = (room: string) => joinAt.delete(room);
+  return { lk, created, deleted, dispatched, kill };
 }
 
 const cfg: TelephonyConfig = {
@@ -191,4 +194,40 @@ test('/health reports warm room readiness', async () => {
   assert.equal((await (await t.app.request('/health')).json()).warm_room_ready, false);
   await wait(60);
   assert.equal((await (await t.app.request('/health')).json()).warm_room_ready, true);
+});
+
+test('warm room whose agent died → fresh room instead of handing Chert an empty room', async () => {
+  const f = fakeLiveKit(30);
+  const t = make(f.lk, { warmPool: true });
+  t.start();
+  await wait(80);
+  const dead = f.created[0];
+  f.kill(dead);
+  const d = await (await post(t.app, '/webhooks/chert', incoming('call_deadwarm'))).json();
+  assert.equal(d.action, 'accept');
+  assert.notEqual(d.remote_participant_identity, `agent-${dead}`);
+  assert.match(d.remote_participant_identity, /support-call_dea/);
+  assert.ok(f.deleted.includes(dead), 'the dead warm room is deleted');
+});
+
+test('warm room is recycled before LiveKit times it out, with no gap', async () => {
+  const f = fakeLiveKit(30);
+  const t = make(f.lk, { warmPool: true, warmMaxAgeMs: 100 });
+  t.start();
+  await wait(60);
+  const first = f.created[0];
+  await wait(150); // past max age + time for the replacement to join
+  assert.ok(f.deleted.includes(first), 'old warm room deleted');
+  assert.equal((await (await t.app.request('/health')).json()).warm_room_ready, true);
+  const d = await (await post(t.app, '/webhooks/chert', incoming('call_recycled'))).json();
+  assert.equal(d.action, 'accept');
+  assert.notEqual(d.remote_participant_identity, `agent-${first}`);
+  assert.match(d.remote_participant_identity, /support-warm-/);
+});
+
+test('Chert clock behind ours (created_at looks old) still gets a cold room, not an instant decline', async () => {
+  const f = fakeLiveKit(50);
+  const { app } = make(f.lk);
+  const d = await (await post(app, '/webhooks/chert', incoming('call_behind', new Date(Date.now() - 60_000).toISOString()))).json();
+  assert.equal(d.action, 'accept');
 });
