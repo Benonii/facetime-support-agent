@@ -14,7 +14,7 @@
 <link rel="icon" href="/icons/icon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <title>__BRAND__ Video Support</title>
 <style>
   /*
@@ -27,8 +27,8 @@
     --background: #ffffff; --surface: #f5f5f5; --raised: #ebebeb; --border: #e9e9e9;
     --primary: #0d0d0d; --secondary: #5d5d5d; --tertiary: #6f6f6f; --faint: #8f8f8f;
     --ink: #f5f5f5; --ink-2: #c9c9c9; --ink-3: #8f8f8f;       /* the same ladder, on video */
-    --glass: rgba(20, 20, 20, 0.55); --glass-2: rgba(255, 255, 255, 0.16);
-    --end: #ff3b30; --live: #34c759;
+    --glass: rgba(18, 18, 18, 0.5); --glass-strong: rgba(18, 18, 18, 0.64); --glass-light: rgba(245, 245, 245, 0.86); --hair: rgba(255, 255, 255, 0.14);
+    --end: #ff3b30; --live: #34c759;   /* the only two colours: end call, start call */
     --ease: cubic-bezier(0.16, 1, 0.3, 1);
     --safe-t: env(safe-area-inset-top); --safe-b: env(safe-area-inset-bottom);
   }
@@ -46,24 +46,24 @@
   .brand { display: flex; align-items: center; gap: 10px; font-weight: 400; font-size: 15px; color: var(--primary); }
   .brand img { width: 24px; height: 24px; border-radius: 7px; }
   .pitch { animation: row-arrive 360ms var(--ease) both; }
-  .pitch h1 { font-weight: 300; font-size: clamp(38px, 11vw, 48px); line-height: 1.08; letter-spacing: -0.02em; margin: 0 0 16px; max-width: 11ch; }
-  .pitch p { margin: 0; color: var(--secondary); max-width: 34ch; font-size: 17px; line-height: 1.5; }
+  .pitch h1 { font-weight: 600; font-size: clamp(38px, 11vw, 48px); line-height: 1.06; letter-spacing: -0.03em; margin: 0 0 14px; max-width: 11ch; }
+  .pitch p { margin: 0; color: var(--secondary); max-width: 34ch; font-size: 16px; line-height: 1.5; font-weight: 300; }
   .how { list-style: none; padding: 0; margin: 28px 0 0; display: grid; gap: 10px; counter-reset: s; }
-  .how li { counter-increment: s; display: grid; grid-template-columns: 24px 1fr; gap: 12px; align-items: baseline; color: var(--secondary); font-size: 15px; }
+  .how li { counter-increment: s; display: grid; grid-template-columns: 24px 1fr; gap: 12px; align-items: baseline; color: var(--tertiary); font-size: 14px; font-weight: 300; }
   .how li::before { content: counter(s); font-size: 13px; color: var(--faint); font-variant-numeric: tabular-nums; }
   .dock { display: grid; justify-items: center; gap: 12px; }
-  #call { width: 100%; max-width: 420px; height: 56px; border: 0; border-radius: 14px; background: var(--primary); color: var(--background);
-    font-weight: 400; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 10px; transition: transform 120ms var(--ease), opacity 150ms; }
+  #call { width: 100%; max-width: 420px; height: 56px; border: 0; border-radius: 999px; background: var(--live); color: #fff;
+    font-weight: 500; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 10px; transition: transform 120ms var(--ease), opacity 150ms; }
   #call:active { transform: scale(0.98); }
   #call:disabled { opacity: 0.5; }
   #call svg { width: 20px; height: 20px; }
   #homeNote { min-height: 20px; font-size: 13px; color: var(--tertiary); text-align: center; }
-  #homeNote.err { color: var(--end); }
-  #install { display: none; border: 1px solid var(--border); background: var(--surface); border-radius: 10px; padding: 8px 14px; color: var(--secondary); font-size: 13px; }
+  #homeNote.err { color: var(--primary); font-weight: 400; }
+  #install { display: none; border: 1px solid var(--border); background: var(--surface); border-radius: 999px; padding: 8px 14px; color: var(--secondary); font-size: 13px; }
 
   /* ---------- In call: FaceTime ---------- */
   #incall { background: #0d0d0d; color: var(--ink); }
-  #stage { position: relative; flex: 1; overflow: hidden; background: #161616; }
+  #stage { position: relative; flex: 1; overflow: hidden; background: #0d0d0d; }
   /* Before the technician's card arrives your camera is the stage; once it does, the card takes over and you go to the corner. */
   #me, #agentVideo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   #agentVideo { opacity: 0; transition: opacity 400ms var(--ease); }
@@ -71,7 +71,7 @@
   #stage.remote #me { inset: auto 16px calc(24px + var(--safe-b)) auto; left: 16px; width: 104px; height: 150px; border-radius: 18px;
     box-shadow: 0 8px 30px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.12); z-index: 4; transition: width 400ms var(--ease), height 400ms var(--ease), border-radius 400ms var(--ease); }
   #flip { position: absolute; left: 24px; bottom: calc(32px + var(--safe-b)); z-index: 5; width: 32px; height: 32px; border-radius: 50%; border: 0;
-    background: var(--glass); color: var(--ink); display: grid; place-items: center; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+    background: var(--glass); color: var(--ink); display: grid; place-items: center; box-shadow: 0 0 0 1px var(--hair); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
   #flip svg { width: 16px; height: 16px; }
   #stage:not(.remote) #flip { left: auto; right: 16px; bottom: calc(24px + 4 * 62px + var(--safe-b)); width: 50px; height: 50px; }
   #stage:not(.remote) #flip svg { width: 22px; height: 22px; }
@@ -80,84 +80,84 @@
   #top { position: absolute; left: 16px; right: 16px; top: calc(12px + var(--safe-t)); z-index: 6; pointer-events: none; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
   .chip, #guide { pointer-events: auto; }
   .chip { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px 7px 8px; border-radius: 999px; background: var(--glass);
-    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); font-size: 13px; font-weight: 400; color: var(--ink); animation: row-arrive 300ms var(--ease) both; }
+    box-shadow: 0 0 0 1px var(--hair); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); font-size: 14px; font-weight: 500; color: var(--ink); animation: row-arrive 300ms var(--ease) both; }
   .chip img { width: 20px; height: 20px; border-radius: 50%; }
   .chip .chev { color: var(--ink-3); font-weight: 300; }
   #status { gap: 10px; animation-delay: 80ms; }
   #orb { position: relative; width: 14px; height: 14px; flex: none; }
   #orb i { position: absolute; inset: 0; border-radius: 50%; border: 1px solid var(--ink); transform: scale(var(--s, 1)); opacity: var(--o, 0.35); transition: transform 80ms linear, opacity 80ms linear; }
   #orb i:nth-child(2) { inset: 3px; opacity: 0.5; }
-  #orb b { position: absolute; inset: 5px; border-radius: 50%; background: var(--live); transition: background 200ms; }
+  #orb b { position: absolute; inset: 5px; border-radius: 50%; background: var(--ink); }
   #orb.thinking b { background: var(--ink); animation: pixel-on 650ms ease-in-out infinite; }
   #orb.thinking i { animation: pixel-on 650ms ease-in-out infinite; }
   #orb.thinking i:nth-child(2) { animation-delay: 180ms; }
   #say { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
-  #who { font-weight: 500; font-size: 13px; }
-  #what { font-size: 12px; color: var(--ink-2); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; max-width: 58vw; }
-  #what.loading { background-image: linear-gradient(90deg, var(--ink-3) 35%, var(--ink) 50%, var(--ink-3) 65%); background-size: 200% 100%;
-    -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer-text 1.4s linear infinite; }
-  @keyframes shimmer-text { 0% { background-position: 150%; } 100% { background-position: -50%; } }
+  #who { font-weight: 500; font-size: 14px; }
+  #what { font-size: 12px; font-weight: 300; color: var(--ink-2); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; max-width: 58vw; }
+  #what.loading { animation: dim-pulse 1.4s ease-in-out infinite; }
+  @keyframes dim-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
   @keyframes pixel-on { 0%, 100% { opacity: 0.15; } 18%, 42% { opacity: 1; } 62% { opacity: 0.15; } }
   @keyframes row-arrive { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
   /* Your mic, as proof we hear you */
-  #you { display: flex; align-items: center; gap: 6px; margin-left: 4px; padding-left: 10px; border-left: 1px solid var(--glass-2); color: var(--ink-3); font-size: 11px; }
+  #you { display: flex; align-items: center; gap: 6px; margin-left: 4px; padding-left: 10px; border-left: 1px solid var(--hair); color: var(--ink-3); font-size: 11px; font-weight: 300; }
   #bars { display: flex; gap: 2px; height: 16px; align-items: center; }
   #bars i { width: 3px; height: 4px; border-radius: 2px; background: var(--ink-3); transition: height 70ms linear, background 150ms; }
-  #you.hearing #bars i { background: var(--live); }
+  #you.hearing #bars i { background: var(--ink); }
   #you.hearing { color: var(--ink); }
-  #you.muted { color: var(--end); }
-  #you.muted #bars i { background: var(--end); height: 4px !important; }
+  #you.muted { color: var(--ink-3); }
+  #you.muted #bars i { background: var(--ink-3); height: 4px !important; }
 
   /* Look / Diagnose / Fix / Done */
   #progress { display: flex; gap: 4px; padding: 6px 8px; animation-delay: 140ms; }
-  #progress span { font-size: 11px; color: var(--ink-3); padding: 2px 8px; border-radius: 999px; transition: background 250ms var(--ease), color 250ms; }
+  #progress span { font-size: 11px; font-weight: 300; color: var(--ink-3); padding: 2px 8px; border-radius: 999px; transition: background 250ms var(--ease), color 250ms; }
   #progress span.done { color: var(--ink-2); }
   #progress span.now { background: var(--ink); color: var(--primary); font-weight: 400; }
-  #progress span.fixed { background: var(--live); color: var(--primary); font-weight: 400; }
+  #progress span.fixed { background: var(--ink); color: var(--primary); font-weight: 500; }
 
   /* Looking / diagnosing: a quiet scan line so you know the frame is being read */
   #scan { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 250ms var(--ease); z-index: 1; }
   #scan.on { opacity: 1; }
   #scan::before { content: ''; position: absolute; left: 0; right: 0; height: 28%; top: -28%;
-    background: linear-gradient(to bottom, transparent, rgba(255,255,255,.08) 70%, rgba(255,255,255,.4) 100%); border-bottom: 1px solid var(--ink); animation: sweep 1.8s var(--ease) infinite; }
+    background: rgba(255,255,255,.06); border-bottom: 1px solid rgba(255,255,255,.55); animation: sweep 1.8s var(--ease) infinite; }
   @keyframes sweep { to { top: 100%; } }
 
   /* The answer: your own device, frozen, with the part circled */
   #guide { width: 100%; margin-top: 4px; z-index: 3; border-radius: 18px; overflow: hidden;
-    background: var(--background); color: var(--primary); box-shadow: 0 18px 50px rgba(0,0,0,.5); transform-origin: top right;
+    background: var(--glass-strong); color: var(--ink); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    box-shadow: 0 0 0 1px var(--hair), 0 18px 50px rgba(0,0,0,.4); transform-origin: top right;
     clip-path: inset(0 0 100% 0 round 18px); opacity: 0; transition: clip-path 500ms var(--ease), opacity 200ms, transform 400ms var(--ease); }
   #guide.on { clip-path: inset(0 0 0 0 round 18px); opacity: 1; }
   #guide.min { transform: scale(0.34); }
   #guide.min .cap { display: none; }
-  .shot { position: relative; line-height: 0; background: var(--surface); }
+  .shot { position: relative; line-height: 0; background: rgba(0,0,0,.3); }
   .shot img { width: 100%; max-height: 42vh; object-fit: contain; display: block; }
   #ring { position: absolute; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 0 2px rgba(0,0,0,.55), inset 0 0 0 2px rgba(0,0,0,.55);
     animation: ring-pulse 1.2s ease-in-out infinite; display: none; }
   @keyframes ring-pulse { 50% { transform: scale(1.08); } }
-  #ringLabel { position: absolute; transform: translate(-50%, 8px); background: var(--primary); color: var(--background); font-size: 12px; font-weight: 400;
+  #ringLabel { position: absolute; transform: translate(-50%, 8px); background: var(--ink); color: var(--primary); font-size: 12px; font-weight: 500;
     line-height: 1.2; padding: 4px 9px; border-radius: 999px; white-space: nowrap; display: none; }
   .cap { padding: 12px 16px 14px; display: grid; gap: 2px; }
-  .cap small { color: var(--faint); font-size: 12px; }
-  .cap p { margin: 0; font-weight: 400; font-size: 17px; line-height: 1.35; }
-  #guide.result { background: var(--primary); color: var(--background); }
-  #guide.result .cap small { color: var(--ink-3); }
+  .cap small { color: var(--ink-3); font-size: 11px; font-weight: 400; letter-spacing: 0.04em; text-transform: uppercase; }
+  .cap p { margin: 0; font-weight: 500; font-size: 20px; line-height: 1.3; letter-spacing: -0.01em; }
+  #guide.result { background: var(--glass-light); color: var(--primary); }
+  #guide.result .cap small { color: var(--faint); }
 
   /* Bottom-right: round controls, FaceTime order */
   #bar { position: absolute; right: 16px; bottom: calc(24px + var(--safe-b)); z-index: 6; display: flex; flex-direction: column; gap: 12px; }
   .ctl { width: 50px; height: 50px; border-radius: 50%; border: 0; background: var(--glass); color: var(--ink); display: grid; place-items: center;
-    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); transition: background 150ms, color 150ms, transform 120ms var(--ease); }
+    box-shadow: 0 0 0 1px var(--hair); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(16px); transition: background 150ms, color 150ms, transform 120ms var(--ease); }
   .ctl:active { transform: scale(0.92); }
   .ctl svg { width: 22px; height: 22px; }
   .ctl.off { background: var(--ink); color: var(--primary); }
-  #hang { background: var(--end); }
+  #hang { background: var(--end); box-shadow: none; }
   #unmute { position: absolute; left: 50%; bottom: calc(100px + var(--safe-b)); transform: translateX(-50%); display: none; padding: 12px 18px; border: 0; border-radius: 999px;
-    background: var(--ink); color: var(--primary); font-weight: 400; font-size: 14px; z-index: 7; white-space: nowrap; }
+    background: var(--ink); color: var(--primary); font-weight: 500; font-size: 14px; z-index: 7; white-space: nowrap; }
 
   @media (prefers-reduced-motion: reduce) {
     #scan::before, #orb.thinking i, #orb.thinking b, #ring, #what.loading, .chip, .pitch { animation: none; }
     #orb i, #guide, #agentVideo, #stage.remote #me { transition: opacity 150ms; }
-    #what.loading { color: var(--ink); background: none; }
+    #what.loading { opacity: 1; }
   }
 </style>
 </head>
