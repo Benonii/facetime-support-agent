@@ -56,8 +56,10 @@ MOCK_INTELLIGENCE=0
 
 This explicit selection matters: `.env.example` sets `openai`, and an explicit
 value overrides the photo runner's CLI default. For a photo-only run, leave
-`OPENAI_API_KEY`, `LIVEKIT_*`, and `CHERT_MESSAGING_SECRET` blank. Keenable's key is
-optional; without one the code uses its public endpoint.
+`LIVEKIT_*` and `CHERT_MESSAGING_SECRET` blank. Set `OPENAI_API_KEY` for product
+research, even when diagnosis uses Codex CLI. Without it research returns an
+unavailable brief; CLI diagnosis still works from images and matching product
+knowledge. Keenable's key is optional; without one the code uses its public endpoint.
 
 ```sh
 npm run try:intel -- /absolute/path/your-photo.jpg "Where does this connector go?" --out data/intelligence/first-run
@@ -73,7 +75,7 @@ sequence; the LiveKit bridge carries earlier images as described below.
 
 | Mode | Local credentials/configuration |
 | --- | --- |
-| CLI photo intelligence | Your saved Codex login; no OpenAI API key needed for intelligence |
+| CLI photo intelligence | Your saved Codex login for diagnosis; `OPENAI_API_KEY` for product research |
 | API photo intelligence | `INTELLIGENCE_PROVIDER=openai`, your `OPENAI_API_KEY`; optionally `VISION_MODEL` / `EXTRACT_MODEL` |
 | Live voice + CLI intelligence | Your saved Codex login **plus** a separate `OPENAI_API_KEY` with Realtime access and `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` |
 | iMessage + CLI intelligence | Your saved Codex login, explicit `INTELLIGENCE_PROVIDER=codex-cli`, `MOCK_INTELLIGENCE=0`, and authorized `CHERT_MESSAGING_SECRET`; optional tenant slug |
@@ -187,8 +189,9 @@ For later fault/repair acceptance, collect the same actual device before and aft
 the action plus an obscured view, and record human-confirmed facts. Repeat the first
 input, inspect matching image hashes, visible facts, next steps, source applicability,
 and circle position. A connected cable alone is not proof of restored function.
-Product-specific manual ingestion remains deferred; Keenable query research is a
-separate handoff, not an implemented retrieval change.
+Persistent product-manual ingestion remains deferred. On-demand Keenable retrieval,
+Decisions ranking and compact evidence briefs are implemented in `research.ts`;
+see Bridge behavior below. The recorded photo acceptance above predates this pipeline.
 
 ## LiveKit agent with CLI intelligence
 
@@ -250,20 +253,37 @@ geometric correctness guarantee; inspect replay output on the actual device.
 - `findFix` requires a nonempty JPEG Buffer, even for an invisible observation.
   It sends the image itself to the diagnosis model alongside observation/symptom.
   The boundary checks presence/type, not JPEG decoding; callers supply valid JPEGs.
-- Planning first uses the photo, observation, and matching product notes. Its private
-  `search_query` is empty for ordinary visible cable/port/power/mute guidance. It
-  requests one Keenable lookup only for explicit caller web/manual research or
-  model-specific knowledge missing from the notes. A blurry view needs a new photo,
-  not search. Voice forwards explicit research requests in the question.
-- A requested lookup is capped at six seconds. Useful results get one revised plan;
-  unavailable/empty search retains the safe draft with no citations. Shared FixPlan
-  output is unchanged. No extra model call is made just to decide whether to search.
-- Live logs report model operation/duration and visual capture/observe/plan/publication
-  timings without photos or caller text. The three model calls still dominate latency:
-  one measured CLI port-guidance replay took 24.4s with search skipped. This does not
-  establish handheld call latency or fix the observed Realtime response collisions.
-- Plans have at most six nonempty steps. Source URLs must have appeared in search;
-  titles come from those results. This validates provenance, not semantic support.
+- `findFix` first plans from the current photo and matching product knowledge. Its
+  private `search_query` is empty for routine visual guidance; explicit caller research
+  or a missing model-specific procedure requests one research pass. Unclear images
+  require another view, not search. This uses the existing planning call, not a new gate call.
+- When requested, `findFix` calls `researchProduct` with the focused query, symptom, device, findings/ports/lights
+  and explicit model uncertainty. Four parallel Keenable searches cover official
+  support/manuals, specs, Reddit and other forums (four results each). No images go
+  to search. The internal request accepts an optional verified manufacturer domain;
+  the current observation contract cannot confirm one, so the live bridge discovers sources.
+- Decisions (`gpt-6-luna`) scores deduplicated snippets from 0 to 3. At most four
+  candidates scoring >=1.5 are fetched (up to 6000 characters each), then one text-only
+  Responses call (`gpt-6-luna`, no tools) returns a structured evidence brief.
+- Only that brief reaches diagnosis: at most six cited findings, four sources,
+  applicability gaps, contradictions and coverage limitations, <=6000 serialized
+  characters. Manufacturer guidance/specs are distinguished from community reports.
+  Unknown/invented citation IDs and oversized summaries produce an unavailable report.
+- Empty/unavailable research retains the safe local draft with no citations or second
+  diagnosis call. A useful brief gets one `researched_fix_plan` call using the same images.
+  Existing model/visual phase timing logs are preserved.
+- Research has a 15-second total deadline: search <=4s, ranking <=2s, page fetch <=4s,
+  synthesis uses the remaining time. No automatic retries. Partial fetch failures use
+  ranked excerpts with explicit limitations. No useful evidence is distinct from
+  research unavailable; neither sends raw results to diagnosis. The photo, matching
+  product knowledge and current diagnosis provider remain available.
+- Real research runs only when `DEMO_SCRIPT` and `MOCK_INTELLIGENCE` are not `1`.
+  The teammate-owned `agent:demo` intentionally bypasses real research and diagnosis.
+- Research requires a configured OpenAI API key with Decisions and Responses access,
+  including in CLI mode. Missing/expired keys return unavailable; no personal-key fallback.
+  `[research]` logs only status, stage durations, candidate counts/IDs and token usage.
+- Plans have at most six nonempty steps. Source URLs must occur in the brief's source
+  list; titles come from retrieved results. This validates provenance, not semantic support.
 - The voice agent owns speech and `CallState`; screens render its snapshot/target.
   The agent retains raw JPEG and observation together per call, including invisible
   observations. It updates the screen snapshot and observation together after vision

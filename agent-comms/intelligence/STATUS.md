@@ -1,5 +1,9 @@
 # Intelligence status (part 3, Nikhil)
 
+## 2026-10-23: PR12 merge reconciliation
+- Preserved the latest on-demand search gate: first draft uses photo/KB, blank search_query skips retrieval. Explicit research/missing model knowledge invokes the compact research pipeline once; useful evidence revises the draft, empty/unavailable evidence retains it with no citations. No raw snippets reach diagnosis.
+- Preserved model/visual timing logs, voice behavior and scripted demo. Research remains capped at 15s total. Conflict resolution is in an isolated checkout; no running worker restarted.
+
 ## 2026-10-23: demand-driven search implemented
 - Planning uses the current photo and product notes first; its private search_query requests at most one lookup for explicit caller research or missing model-specific instructions. Empty/failed search keeps the safe draft. No shared DTO changes, new voice tool, or frontend edits. Shure scripted mode remains unchanged.
 - Added model duration and visual phase logs. 12 focused intelligence/controller tests pass; typecheck passes. Actual CLI IMG_1051 replay skipped search and returned correct destination guidance in 24.4s (observe 10.5s, plan 6.2s, target 7.5s). This is still slow for conversation; removing search alone does not remove model latency.
@@ -9,6 +13,17 @@
 - Nikhil requests web search on demand rather than every diagnosis. Implementing a local-first plan with optional internal search escalation and model/visual phase timings. Preserve the existing shared DTOs, frontend, and scripted Shure demo.
 - Current phone call shows repeated Realtime interruptions/active-response collisions; existing logs do not expose individual inference timings. No claim that search explains the full wait.
 - Next: focused search routing tests, one actual image timing, restart isolated support-test-nikhil worker.
+
+## 2026-10-23: product research evidence briefs implemented
+- Owner: Keenable research integration, branch `codex/product-research`, baseline `9a450ec`. Nikhil approved the pipeline and requested quick hackathon functionality.
+- `findFix` now invokes general product research: four parallel Keenable searches -> deduplicated Decisions relevance -> up to four fetched pages -> compact Responses evidence brief. Arbitrary product/model/symptom inputs; no Apple-specific retrieval logic. Existing JPEG/reference/provider/KB/voice/screen contracts preserved.
+- Hard research deadline 15s, no automatic retries, <=6000-character brief. Search/ranking/fetch caps 4/2/4s. Ruling after live timeout: summary may use remaining total budget instead of an independent 5s cutoff. Raw results never reach diagnosis on failure; empty evidence and unavailable research are distinct.
+- New requirement for CLI users: set `OPENAI_API_KEY` with Decisions + Responses access to enable research. CLI diagnosis still works without it, with an explicit unavailable report. No credential copying or personal-key fallback. `KEENABLE_API_KEY` remains optional.
+- Focused research/intelligence tests and existing visual-controller checks pass (16 total), Node 24 typecheck and diff check pass. One read-only review found no material bugs; stale documentation corrected. No broad suite per hackathon scope.
+- Live probes: MagSafe research 4.09s + CLI diagnosis 7.59s = 11.69s; coffee 5.55s; keyboard 8.24s (one page fetch timed out, report retained coverage limitation). Each returned a compact source-linked brief. Coffee/keyboard are hypothetical text cases; MagSafe used the existing paired photo/observation and earlier reference photos. Final MagSafe asks for a clearer view of the obscured socket, cites Apple, and preserves unknown model/generation. No repair or live-phone success claimed.
+- Source labels are model judgments: the brief distinguishes direct manufacturer content from third-party/forum reports; provenance/size validation is deterministic, factual entailment is not. Private photos, result bundles and credentials remain outside Git.
+- Latest upstream added `DEMO_SCRIPT=1` / `agent:demo`, which deliberately bypasses real intelligence. Use `DEMO_SCRIPT=0` and `MOCK_INTELLIGENCE=0` for this pipeline.
+- No shared worker restarted, no frontend/voice/DTO edits. Integrate the research commit/PR, provide a project API key, and restart the one agreed worker to use it. Existing callers automatically gain research through `findFix`.
 
 ## 2026-10-23: voice → intelligence interface landed (hackathon slice)
 - [PR #11](https://github.com/Benonii/facetime-support-agent/pull/11) merged. Source implementation 15dcd0c; restart the agreed worker after pulling main.

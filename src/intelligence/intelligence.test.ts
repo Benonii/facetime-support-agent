@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Observation } from '../contracts.js';
 import { normalizeObservation } from './vision.js';
-import { findFix, groundPlan, searchQuery } from './kb.js';
+import { findFix, groundPlan } from './kb.js';
 
 // Transport fixture only; no claim that these bytes depict a real device.
 const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xd9]);
@@ -101,11 +101,23 @@ test('diagnosis sends the exact image and symptom to the model', async () => {
   }
 });
 
-test('retrieval includes the caller symptom and observed device', () => {
-  const query = searchQuery({ observation, symptom: 'drops connection every night' });
-  assert.ok(query.includes('drops connection every night'));
-  assert.ok(query.includes('Example R1'));
-  assert.ok(query.includes('Internet red'));
+test('diagnosis consumes only the processed brief and cites only its sources', async () => {
+  const source = { id: 's1', title: 'Applicable guide', url: 'https://example.com/manual', coverage: 'page' as const };
+  let prompt = '';
+  const plan = await findFix({ jpeg, observation, symptom: 'connector does not fit' }, async req => {
+    prompt = req.text;
+    assert.equal(req.jpeg, jpeg);
+    return req.schema.parse({ search_query: req.name === 'fix_plan' ? 'Apple connector compatibility' : '', likely_cause: 'Connector mismatch needs confirmation', steps: ['Show the connector'],
+      needs_technician_if: 'Visible damage', sources: [source, { title: 'Invented', url: 'https://example.com/unseen' }] });
+  }, async req => {
+    assert.match(req.question, /connector does not fit/);
+    assert.ok(req.identityUncertainty.length > 0);
+    return { status: 'evidence_found', findings: [{ text: 'Relevant connector fact', kind: 'specification', sourceIds: ['s1'] }],
+      gaps: ['Model unconfirmed'], contradictions: [], sources: [source], limitations: [] };
+  });
+  assert.match(prompt, /Relevant connector fact/);
+  assert.doesNotMatch(prompt, /Web results:/);
+  assert.deepEqual(plan.sources, [{ title: source.title, url: source.url }]);
 });
 
 test('plan drops invented sources and caps guidance at six nonempty steps', () => {
@@ -124,32 +136,34 @@ test('plan drops invented sources and caps guidance at six nonempty steps', () =
   assert.equal(plan.steps[0], 'Connect WAN');
 });
 
-test('routine visual guidance skips search; explicit research and knowledge gaps escalate once', async () => {
-  const savedFetch = globalThis.fetch;
-  const source = {title:'Manufacturer manual',url:'https://example.com/manual',snippet:'Model-specific pairing instructions'};
+test('routine visual guidance skips research; explicit research and knowledge gaps escalate once', async () => {
+  const source = {id:'s1',title:'Manufacturer manual',url:'https://example.com/manual',coverage:'page' as const};
   let searches = 0;
-  globalThis.fetch = async () => { searches++; return Response.json({results:[source]}); };
+  const research: typeof import('./research.js').researchProduct = async req => {
+    searches++;
+    assert.match(req.question, /Example R1 official pairing instructions/);
+    return {status:'evidence_found',findings:[{text:'Pairing fact',kind:'manufacturer_guidance',sourceIds:['s1']}],sources:[source],gaps:[],contradictions:[],limitations:[]};
+  };
   const base = {likely_cause:'Visible connection',steps:['Connect the visible port'],needs_technician_if:'Still failing',sources:[]};
-  try {
-    let calls = 0;
-    const local = await findFix({jpeg,observation,symptom:'Where does this plug go?'}, async r => {
-      calls++; return r.schema.parse({...base,search_query:''});
-    });
-    assert.equal(searches,0); assert.equal(calls,1); assert.deepEqual(local,base);
-    for (const symptom of ['Search the manufacturer manual for pairing instructions','Pairing is still failing; the local notes do not cover this model']) {
-      calls=0;
-      const researched = await findFix({jpeg,observation,symptom}, async r => {
-        calls++;
-        return r.schema.parse(calls===1 ? {...base,search_query:'Example R1 official pairing instructions'} : {...base,sources:[source]});
-      });
-      assert.equal(calls,2); assert.deepEqual(researched.sources,[{title:source.title,url:source.url}]);
-    }
-    assert.equal(searches,2);
-    globalThis.fetch=async()=>{throw Error('unavailable');};
+  let calls = 0;
+  const local = await findFix({jpeg,observation,symptom:'Where does this plug go?'}, async r => {
+    calls++; return r.schema.parse({...base,search_query:''});
+  }, research);
+  assert.equal(searches,0); assert.equal(calls,1); assert.deepEqual(local,base);
+  for (const symptom of ['Search the manufacturer manual for pairing instructions','Pairing is still failing; the local notes do not cover this model']) {
+    calls=0;
+    const researched = await findFix({jpeg,observation,symptom}, async r => {
+      calls++;
+      return r.schema.parse(calls===1 ? {...base,search_query:'Example R1 official pairing instructions'} : {...base,sources:[source]});
+    }, research);
+    assert.equal(calls,2); assert.deepEqual(researched.sources,[{title:source.title,url:source.url}]);
+  }
+  assert.equal(searches,2);
+  for (const status of ['unavailable','nothing_relevant'] as const) {
     calls=0;
     const fallback=await findFix({jpeg,observation,symptom:'Look up the manual'},async r=>{
       calls++;return r.schema.parse({...base,search_query:'Example R1 manual'});
-    });
-    assert.equal(calls,1);assert.deepEqual(fallback.sources,[]);
-  } finally {globalThis.fetch=savedFetch;}
+    },async()=>({status,findings:[],sources:[],gaps:[],contradictions:[],limitations:['No usable research']}));
+    assert.equal(calls,1);assert.deepEqual(fallback,base);
+  }
 });
