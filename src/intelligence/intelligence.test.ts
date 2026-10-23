@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Observation } from '../contracts.js';
 import { normalizeObservation } from './vision.js';
-import { findFix, groundPlan, searchQuery } from './kb.js';
+import { findFix, groundPlan } from './kb.js';
 
 // Transport fixture only; no claim that these bytes depict a real device.
 const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xd9]);
@@ -101,11 +101,23 @@ test('diagnosis sends the exact image and symptom to the model', async () => {
   }
 });
 
-test('retrieval includes the caller symptom and observed device', () => {
-  const query = searchQuery({ observation, symptom: 'drops connection every night' });
-  assert.ok(query.includes('drops connection every night'));
-  assert.ok(query.includes('Example R1'));
-  assert.ok(query.includes('Internet red'));
+test('diagnosis consumes only the processed brief and cites only its sources', async () => {
+  const source = { id: 's1', title: 'Applicable guide', url: 'https://example.com/manual', coverage: 'page' as const };
+  let prompt = '';
+  const plan = await findFix({ jpeg, observation, symptom: 'connector does not fit' }, async req => {
+    prompt = req.text;
+    assert.equal(req.jpeg, jpeg);
+    return req.schema.parse({ likely_cause: 'Connector mismatch needs confirmation', steps: ['Show the connector'],
+      needs_technician_if: 'Visible damage', sources: [source, { title: 'Invented', url: 'https://example.com/unseen' }] });
+  }, async req => {
+    assert.match(req.question, /connector does not fit/);
+    assert.ok(req.identityUncertainty.length > 0);
+    return { status: 'evidence_found', findings: [{ text: 'Relevant connector fact', kind: 'specification', sourceIds: ['s1'] }],
+      gaps: ['Model unconfirmed'], contradictions: [], sources: [source], limitations: [] };
+  });
+  assert.match(prompt, /Relevant connector fact/);
+  assert.doesNotMatch(prompt, /Web results:/);
+  assert.deepEqual(plan.sources, [{ title: source.title, url: source.url }]);
 });
 
 test('plan drops invented sources and caps guidance at six nonempty steps', () => {

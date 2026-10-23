@@ -1,5 +1,16 @@
 # Intelligence status (part 3, Nikhil)
 
+## 2026-10-23: product research evidence briefs implemented
+- Owner: Keenable research integration, branch `codex/product-research`, baseline `9a450ec`. Nikhil approved the pipeline and requested quick hackathon functionality.
+- `findFix` now invokes general product research: four parallel Keenable searches -> deduplicated Decisions relevance -> up to four fetched pages -> compact Responses evidence brief. Arbitrary product/model/symptom inputs; no Apple-specific retrieval logic. Existing JPEG/reference/provider/KB/voice/screen contracts preserved.
+- Hard research deadline 15s, no automatic retries, <=6000-character brief. Search/ranking/fetch caps 4/2/4s. Ruling after live timeout: summary may use remaining total budget instead of an independent 5s cutoff. Raw results never reach diagnosis on failure; empty evidence and unavailable research are distinct.
+- New requirement for CLI users: set `OPENAI_API_KEY` with Decisions + Responses access to enable research. CLI diagnosis still works without it, with an explicit unavailable report. No credential copying or personal-key fallback. `KEENABLE_API_KEY` remains optional.
+- Focused research/intelligence tests and existing visual-controller checks pass (16 total), Node 24 typecheck and diff check pass. One read-only review found no material bugs; stale documentation corrected. No broad suite per hackathon scope.
+- Live probes: MagSafe research 4.09s + CLI diagnosis 7.59s = 11.69s; coffee 5.55s; keyboard 8.24s (one page fetch timed out, report retained coverage limitation). Each returned a compact source-linked brief. Coffee/keyboard are hypothetical text cases; MagSafe used the existing paired photo/observation and earlier reference photos. Final MagSafe asks for a clearer view of the obscured socket, cites Apple, and preserves unknown model/generation. No repair or live-phone success claimed.
+- Source labels are model judgments: the brief distinguishes direct manufacturer content from third-party/forum reports; provenance/size validation is deterministic, factual entailment is not. Private photos, result bundles and credentials remain outside Git.
+- Latest upstream added `DEMO_SCRIPT=1` / `agent:demo`, which deliberately bypasses real intelligence. Use `DEMO_SCRIPT=0` and `MOCK_INTELLIGENCE=0` for this pipeline.
+- No shared worker restarted, no frontend/voice/DTO edits. Integrate the research commit/PR, provide a project API key, and restart the one agreed worker to use it. Existing callers automatically gain research through `findFix`.
+
 ## 2026-10-23: voice → intelligence interface landed (hackathon slice)
 - [PR #11](https://github.com/Benonii/facetime-support-agent/pull/11) merged. Source implementation 15dcd0c; restart the agreed worker after pulling main.
 - New composite analyze_device starts capture at verbal tool invocation, acknowledges through LiveKit ctx.update, gives one 15s reminder, uses one JPEG for observe/plan/annotation, and returns the instruction to Realtime for speech. Follow-up ready/next/verify and explicit stop are wired. Existing CallState + ScreenCue send matching images to /phone and GuideCard; no shared contract changes.
