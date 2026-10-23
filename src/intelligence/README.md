@@ -8,20 +8,71 @@ corpus, conversation memory, dedicated image search or a new diagnostic loop.
 
 ## Run with a real photo
 
-Use the repository's supported Node 22 or 24 runtime and installed dependencies.
-Put `OPENAI_API_KEY` in the gitignored root `.env.local`. Optional:
-`KEENABLE_API_KEY`, `VISION_MODEL` (default `gpt-5`), `EXTRACT_MODEL` (default
-`gpt-5-mini`). Search uses the existing public Keenable endpoint without its key.
+Use Node 22.23.2+ or Node 24 and installed dependencies. The photo runner defaults
+`INTELLIGENCE_PROVIDER` to `codex-cli`; the live agent keeps `openai` as its default.
+An explicit environment value takes priority. `MOCK_INTELLIGENCE=1` always means
+canned fixture data and is labeled as such in saved results.
 
 ```sh
-npm run try:intel -- /absolute/path/to/device.jpg "internet is down"
-npm run try:intel -- /absolute/path/to/device.jpg "internet is down" "Connect the WAN cable"
+codex login status
+npm run try:intel -- /absolute/path/router-faulty.jpg "internet is down" --out data/intelligence/faulty-1
+npm run try:intel -- /absolute/path/router-faulty.jpg "internet is down" --step 2 --out data/intelligence/faulty-step2
+INTELLIGENCE_PROVIDER=openai npm run try:intel -- /absolute/path/router-faulty.jpg "internet is down"
 ```
 
-The second command asks vision to locate the part for that step. The CLI reports
-timings and JSON; visually check the box against the same photo before demoing it.
-Do not use the planning sketch as a device-test image. `MOCK_INTELLIGENCE=1` is
-canned integration data, not proof that a real device was understood or fixed.
+CLI requires an authenticated `codex` executable on PATH (or `CODEX_BIN` as an
+executable path). Use a version supporting `exec --ephemeral --ignore-user-config
+--output-schema --image`. `CODEX_MODEL` optionally pins the model; otherwise the
+CLI default is used and its reported identity is saved. No new API key is needed
+for an existing CLI login. Calls run serially, each with a 45-second execution
+limit, in private temporary directories outside the checkout. They request no
+model tool use, use a read-only sandbox, and remove temporary files/processes.
+This is a local demo integration, not a public inference service.
+
+For OpenAI, put `OPENAI_API_KEY` in gitignored `.env.local`. `VISION_MODEL` defaults
+to `gpt-5`; `EXTRACT_MODEL` to `gpt-5-mini`. Both providers use application-side
+Keenable retrieval (`KEENABLE_API_KEY` optional; public endpoint otherwise).
+CLI does not replace the separate OpenAI Realtime voice session.
+
+The runner rotates/resizes the input once, then supplies the same processed JPEG
+to observation, diagnosis, and selected-step annotation. `--step` is a 1-based
+index into the returned plan (default 1), replacing the older freeform third
+positional argument. An unavailable step is an error, not a fallback.
+
+Each run creates a new directory (existing directories are refused):
+
+- `processed.jpg`: the exact image sent to the model.
+- `result.json`: observation, plan, annotation, selected instruction, image SHA-256,
+  provider/model calls, timings, optional human facts, and artifact filenames.
+  No image bytes or data URLs are embedded in this file.
+- `preview.png`: the full processed image with the target circle and selected
+  instruction. Null/invalid targets produce an unannotated image. This is an
+  inspection artifact; part 4 owns the live guide card.
+- On failure: `failure.json` instead of a successful result. No canned fallback.
+
+Default outputs go under ignored `data/intelligence/`. `--out` chooses a new
+output directory; `--facts facts.txt` records human-confirmed expected facts for
+comparison, without feeding those expected answers to the model. Result timings
+separate observation, diagnosis including search, annotation, and rendering;
+model call timings also record provider inference duration.
+
+## Fixed router case and acceptance
+
+Collect three photos of the **same actual router**: WAN unplugged, WAN connected,
+and obscured. Record the symptom, visible port label, cable state, readable lights,
+and uncertainty in a facts file. Do not assume cable colors or labels. The
+planning sketch and synthetic test images are not substitutes for device photos.
+
+Run the faulty photo twice into separate directories, then the connected and
+obscured photos with the same symptom. Check image hashes for repeatability,
+visible facts, changed cable observations, plausible next steps, source support,
+and circle placement against `processed.jpg`. Inspect the obscured result for
+uncertainty and no invented target. A connected cable alone is not proof of restored
+internet. Show the real outputs to Nikhil before expanding the live workflow.
+
+Actual router photos are still pending as of this implementation checkpoint.
+Unit tests, CLI preflight, and a non-device negative case do not establish device
+accuracy or a completed repair/FaceTime call.
 
 ## Bridge behavior
 
@@ -47,7 +98,7 @@ canned integration data, not proof that a real device was understood or fixed.
 ## Focused checks
 
 ```sh
-node --import tsx --test src/intelligence/intelligence.test.ts
+node --import tsx --test src/intelligence/*.test.ts
 ./node_modules/.bin/tsc --noEmit --strict --skipLibCheck --target ES2023 --module NodeNext --moduleResolution NodeNext src/intelligence/*.ts
 ```
 
