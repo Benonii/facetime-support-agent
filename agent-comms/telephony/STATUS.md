@@ -1,5 +1,8 @@
 # Telephony status
 
+## 2026-10-23 4:20 PM PT: /phone optimistic layer (JS only, no styling)
+- The moment the agent starts a look (stage `looking`, or `guiding` with no step and no snapshot), the page freezes the caller's own camera frame into the photo card ("Checking this view…"); the agent's snapshot replaces it when it arrives. "Thinking" shows right after the caller stops talking instead of waiting for `lk.agent.state`. Checked in headless Chromium.
+
 ## 2026-10-23 4:30 PM PT: /phone call fixes from Ben's first live run (design thread)
 - **Flicker:** the agent blanks `lastSnapshot` at the start of every look, which collapsed the photo card and re-opened it seconds later; the page now keeps the last photo up (dimmed) until the next one is decoded. Talking/listening labels hold through word gaps instead of toggling per frame.
 - **Progress pills:** events are now matched on `callId` **or** the room name, in case `ctx.job.metadata.call_id` is missing and the agent falls back to `ctx.room.name`.

@@ -226,6 +226,7 @@ if (!window.LivekitClient) document.write('<script src="https://unpkg.com/liveki
 <script>
 const $ = (id) => document.getElementById(id);
 let room, cam, mic, session, wakeLock, events, audioCtx, running = false, facing = 'environment', muted = false;
+let thinkUntil = 0; // optimistic "Thinking" after the caller stops talking, until the agent's real state arrives
 let lastTarget = null, agentState = 'initializing', stage = 'waiting', agentTalking = false, callerTalking = false, lastStep = null;
 
 const STAGES = ['looking', 'diagnosing', 'guiding', 'resolved'];
@@ -244,7 +245,7 @@ function note(text, err) { $('homeNote').textContent = text; $('homeNote').class
 /** One place decides what the panel says, from agent state + call stage + who is talking. */
 function renderVoice() {
   const busy = stage === 'looking' || stage === 'diagnosing';
-  const thinking = busy || agentState === 'thinking';
+  const thinking = busy || agentState === 'thinking' || (performance.now() < thinkUntil && agentState === 'listening');
   let who = 'Listening';
   if (agentState === 'initializing') who = 'Joining';
   else if (agentTalking || agentState === 'speaking') who = 'Talking';
@@ -327,6 +328,25 @@ function renderGuide(s) {
   } else if (s.lastSnapshot) placeRing(target);
 }
 
+/** Optimistic photo: show the frame the agent is about to analyse right away, instead of after the model answers.
+ *  The agent's own snapshot replaces it as soon as it arrives (different data URL). */
+function freezeFrame() {
+  const v = $('me'), shot = $('shot');
+  if (!v.videoWidth || shot.dataset.src === 'local') return;
+  const k = Math.min(1, 640 / Math.max(v.videoWidth, v.videoHeight));
+  const c = document.createElement('canvas');
+  c.width = Math.round(v.videoWidth * k); c.height = Math.round(v.videoHeight * k);
+  c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+  shot.dataset.src = 'local';
+  shot.onload = shot.onerror = null;
+  placeRing(null);
+  shot.src = c.toDataURL('image/jpeg', 0.7);
+  setText('stepNo', 'Looking');
+  setText('stepText', 'Checking this view…');
+  $('guide').classList.add('on', 'stale');
+  $('guide').classList.remove('result');
+}
+
 /** Live diagnosis state from the agent, relayed by our server. */
 function followCall(callId, roomName) {
   events?.close();
@@ -336,6 +356,9 @@ function followCall(callId, roomName) {
       const ev = JSON.parse(m.data);
       // The agent names the call by its job metadata, or by the room when that is missing. Accept either.
       if ((ev.callId !== callId && ev.callId !== roomName) || ev.type !== 'state') return;
+      // A look is in progress: the agent blanked its photo (stage looking, or guiding with no step while it re-looks).
+      const st = ev.state;
+      if (!st.lastSnapshot && (st.stage === 'looking' || (st.stage === 'guiding' && !st.step))) freezeFrame();
       stage = ev.state.stage;
       lastStep = ev.state.step || null;
       setProgress();
@@ -378,6 +401,8 @@ function loop() {
   if (a > 0.06) agentHeard = now;
   if (c > 0.08) callerHeard = now;
   const at = now - agentHeard < 450, ct = now - callerHeard < 350;
+  if (callerTalking && !ct && !at) { thinkUntil = now + 3000; setTimeout(renderVoice, 3050); }
+  if (at) thinkUntil = 0;
   if (at !== agentTalking || ct !== callerTalking) {
     agentTalking = at; callerTalking = ct;
     $('you').classList.toggle('hearing', ct);
@@ -430,7 +455,7 @@ async function start() {
     });
     room.on(RoomEvent.TrackUnsubscribed, (track) => { if (track.kind === 'video') $('stage').classList.remove('remote'); });
     room.on(RoomEvent.ParticipantAttributesChanged, (changed, p) => {
-      if (changed['lk.agent.state']) { agentState = changed['lk.agent.state']; renderVoice(); }
+      if (changed['lk.agent.state']) { agentState = changed['lk.agent.state']; if (agentState !== 'listening') thinkUntil = 0; renderVoice(); }
     });
     room.on(RoomEvent.ParticipantConnected, (p) => { if (p.attributes?.['lk.agent.state']) { agentState = p.attributes['lk.agent.state']; renderVoice(); } });
     room.on(RoomEvent.AudioPlaybackStatusChanged, () => { $('unmute').style.display = room.canPlaybackAudio ? 'none' : 'block'; });
