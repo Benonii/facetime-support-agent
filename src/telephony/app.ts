@@ -150,6 +150,12 @@ export function createTelephony(lk: LiveKitOps, cfg: TelephonyConfig) {
   // ---------- HTTP ----------
 
   const app = new Hono();
+  // Access log for every route, so we can see which APIs get hit (no bodies, headers or tokens).
+  app.use('*', async (c, next) => {
+    const t0 = Date.now();
+    await next();
+    log(`[http] ${c.req.method} ${c.req.path} → ${c.res.status} in ${Date.now() - t0} ms`);
+  });
   const page = (f: string) => readFileSync(new URL(`../../public/${f}`, import.meta.url), 'utf8');
 
   app.get('/', (c) => c.html(page('dashboard.html').replace('__TRUCK_ROLL_COST__', String(cfg.truckRollCost))));
@@ -162,8 +168,12 @@ export function createTelephony(lk: LiveKitOps, cfg: TelephonyConfig) {
     const t0 = Date.now();
     const ev = await c.req.json<ChertEvent>().catch(() => null);
     const callId = ev?.data?.call_id;
-    if (!ev || !callId) return c.json({ error: 'expected a Chert event with data.call_id' }, 400);
-    log(`[chert] ${ev.type} ${callId}`);
+    if (!ev || !callId) {
+      log(`[chert] rejected webhook: ${ev ? `type ${ev.type ?? '?'} without data.call_id` : 'body is not JSON'}`);
+      return c.json({ error: 'expected a Chert event with data.call_id' }, 400);
+    }
+    const media = ev.data.media ? `audio=${ev.data.media.audio} video=${ev.data.media.video}` : 'media=?';
+    log(`[chert] ${ev.type} ${callId} line=${ev.data.line_id ?? '?'} ${media} lag=${Date.now() - Date.parse(ev.created_at)} ms`);
 
     if (ev.type === 'call.incoming') {
       // Chert's clock and ours can disagree; never plan past our own budget either. If Chert's clock is behind ours,
