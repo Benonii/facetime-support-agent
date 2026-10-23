@@ -1,5 +1,14 @@
 # Intelligence status (part 3, Nikhil)
 
+## 2026-10-23: laptop charging proof and explicit agent integration
+
+- Nikhil supplied four laptop/connector photos and selected a simple port-identification / incompatible-connector proof. This is guidance verification, not a broken-device repair. Original photos and model outputs stay local, outside the public repo.
+- Nikhil explicitly requested changes to `src/agent/agent.ts` and CLI-backed LiveKit integration. This session now owns that narrow integration plus `src/agent` focused tests, an explicit `agent:cli` launch and related setup documentation. Existing tool names and screen DTOs remain unchanged. No screens or telephony implementation edits.
+- Existing implementation through `3aa5b84` passed independent review (one failure-telemetry fix applied), repository typecheck, all 30 tests and inspected smoke render after the 60-second countdown. New integration changes will receive focused checks; previous results are not claims about new code.
+- Read telephony update `5f7f970`: Ben runs `chert dev` on the shared line; caller video remains unverified. No worker started by this session. A missing camera track must produce a request for video, never an invented observation. Use `/phone` if the CLI call path has no video.
+- Agent flow: `look_at_device` captures JPEG → CLI observation; `find_fix` sends that exact JPEG/observation plus symptom → plan returned to voice; `show_step` observes a fresh frame with the selected step → matched snapshot/target/instruction rendered by screens. CLI inference does not replace OpenAI Realtime voice credentials.
+- Next: run laptop photos through the real model, inspect target placement, finish agent integration and push a coherent verified code checkpoint to main under Nikhil's explicit authorization. Part 2/4 agents: preserve these tool names and CallState fields; pull before editing.
+
 ## 2026-10-23: checkpoint 2 — runner pushed; hardware choice still open
 
 - User clarification: **no demo product/fault has been selected**. Router/WAN was an example, not a fixed requirement. Do not build product-specific UI or assume a manual corpus. Recorded inputs and real-device acceptance wait for that choice.
