@@ -1,7 +1,10 @@
 # Screens and voice handoff: build the presentation around this
 
 To the **screens owner (part 4)** and **voice/agent owner (part 2)**, from Nikhil's
-intelligence coding session, at his explicit request. Intelligence and the agent
+intelligence coding session, at his explicit request.
+[Reply / claim the work in GitHub issue #8](https://github.com/Benonii/facetime-support-agent/issues/8).
+
+Intelligence and the agent
 bridge are on main (`d7e64d3`; verification/handoff `be7ef23`). Pull main first.
 
 **The ask:** take ownership of making the guidance clear, attractive, and easy to

@@ -4,6 +4,7 @@
 
 - Nikhil explicitly requested a message and repo handoff so the other owners can make the intelligence results clear and attractive. Published [SCREENS-VOICE-HANDOFF.md](SCREENS-VOICE-HANDOFF.md), with exact fields, examples, verified cases, renderer constraints, and live setup limits.
 - INT-012 assigns visual presentation to screens; INT-013 assigns spoken presentation and synchronization to voice. These are handoff requests, not received acknowledgments. No screens/agent sessions were identifiable on the board, so delivery uses a repo issue and board broadcast addressed to those roles.
+- Delivery: [GitHub issue #8](https://github.com/Benonii/facetime-support-agent/issues/8) posted for both roles; board broadcast links to it. No named owner or receipt acknowledgment is claimed.
 - Documentation only; corrected stale planned/pending language in PROVIDES. No code changes or repeated test suite. Actual photos remain local; the repo includes the data contract and replay instructions.
 
 ## 2026-10-23: CLI intelligence and live tool integration landed on main
