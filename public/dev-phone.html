@@ -333,14 +333,14 @@ function renderGuide(s) {
 function freezeFrame() {
   const v = $('me'), shot = $('shot');
   if (!v.videoWidth || shot.dataset.src === 'local') return;
-  const k = Math.min(1, 640 / Math.max(v.videoWidth, v.videoHeight));
+  const k = Math.min(1, 1920 / Math.max(v.videoWidth, v.videoHeight));
   const c = document.createElement('canvas');
   c.width = Math.round(v.videoWidth * k); c.height = Math.round(v.videoHeight * k);
   c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
   shot.dataset.src = 'local';
   shot.onload = shot.onerror = null;
   placeRing(null);
-  shot.src = c.toDataURL('image/jpeg', 0.7);
+  shot.src = c.toDataURL('image/jpeg', 0.92);
   setText('stepNo', 'Looking');
   setText('stepText', 'Checking this view…');
   $('guide').classList.add('on', 'stale');
@@ -412,10 +412,14 @@ function loop() {
   requestAnimationFrame(loop);
 }
 
+// Prioritize legible labels/text over motion smoothness. These are ideal capture
+// dimensions; browsers may provide less, so log actual settings after every switch.
+const cameraResolution = { width: 1920, height: 1080, frameRate: 15 };
 async function publishCam() {
   const { createLocalVideoTrack, Track } = LivekitClient;
-  cam = await createLocalVideoTrack({ facingMode: facing, resolution: { width: 1280, height: 720 } });
-  await room.localParticipant.publishTrack(cam, { name: 'facetime-remote-video', source: Track.Source.Camera, simulcast: false });
+  cam = await createLocalVideoTrack({ facingMode: facing, resolution: cameraResolution });
+  await room.localParticipant.publishTrack(cam, { name: 'facetime-remote-video', source: Track.Source.Camera, simulcast: false,
+    videoEncoding: { maxBitrate: 6_000_000, maxFramerate: 15 }, degradationPreference: 'maintain-resolution' });
   cam.attach($('me'));
   await ensureFacing();
 }
@@ -427,8 +431,10 @@ async function ensureFacing() {
     const cams = (await navigator.mediaDevices.enumerateDevices().catch(() => [])).filter((d) => d.kind === 'videoinput');
     const want = facing === 'environment' ? /back|rear|environment/i : /front|user|face/i;
     const pick = cams.find((d) => want.test(d.label)) || (cams.length > 1 ? (facing === 'environment' ? cams[cams.length - 1] : cams[0]) : null);
-    if (pick && pick.deviceId !== settings().deviceId) await cam.restartTrack({ deviceId: pick.deviceId }).catch((e) => console.warn('camera', e));
+    if (pick && pick.deviceId !== settings().deviceId) await cam.restartTrack({ deviceId: pick.deviceId, resolution: cameraResolution }).catch((e) => console.warn('camera', e));
   }
+  const { width, height, frameRate, facingMode } = settings();
+  console.info('[camera] capture', { width, height, frameRate, facingMode });
   $('me').style.transform = (settings().facingMode || facing) === 'user' ? 'scaleX(-1)' : '';
 }
 
@@ -509,7 +515,7 @@ $('flip').onclick = async () => {
   if (!cam) return;
   $('flip').disabled = true;
   // Restart the same track instead of republishing, so the technician keeps receiving frames without resubscribing.
-  try { await cam.restartTrack({ facingMode: facing }); await ensureFacing(); } catch (e) { console.warn('flip', e); }
+  try { await cam.restartTrack({ facingMode: facing, resolution: cameraResolution }); await ensureFacing(); } catch (e) { console.warn('flip', e); }
   $('flip').disabled = false;
 };
 $('mute').onclick = async () => {

@@ -77,7 +77,7 @@ export default defineAgent({
     const caller = await ctx.waitForParticipant();
     await post({ type: 'call.started', callId });
     const frames = new FrameGrabber(ctx.room, caller.identity);
-    const visual = createVisualRequestController({ intelligence, state, grabJpeg: () => (DEMO_PHOTO ? readFile(DEMO_PHOTO) : frames.grabJpeg()), snapshot: jpeg => thumb(jpeg, 640), emit });
+    const visual = createVisualRequestController({ intelligence, state, grabJpeg: () => (DEMO_PHOTO ? readFile(DEMO_PHOTO) : frames.grabJpeg()), snapshot: jpeg => thumb(jpeg, 1920), emit });
 
     const tools = {
       ...createVisualTools(visual),

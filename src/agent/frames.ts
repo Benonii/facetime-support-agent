@@ -60,17 +60,19 @@ export class FrameGrabber {
 
   /** Waits briefly so the caller's hand settles, then returns the newest frame as JPEG. */
   async grabJpeg(opts: { settleMs?: number; maxSide?: number; quality?: number } = {}): Promise<Buffer | null> {
-    const { settleMs = 400, maxSide = 1280, quality = 85 } = opts;
+    const { settleMs = 400, maxSide = 1920, quality = 95 } = opts;
     await new Promise((r) => setTimeout(r, settleMs));
     if (!this.hasVideo || !this.latest) return null;
     const { frame, rotation } = this.latest;
     const rgba = frame.convert(VideoBufferType.RGBA);
     const deg = { [VideoRotation.VIDEO_ROTATION_0]: 0, [VideoRotation.VIDEO_ROTATION_90]: 90, [VideoRotation.VIDEO_ROTATION_180]: 180, [VideoRotation.VIDEO_ROTATION_270]: 270 }[rotation] ?? 0;
-    return sharp(Buffer.from(rgba.data), { raw: { width: rgba.width, height: rgba.height, channels: 4 } })
+    const { data: jpeg, info } = await sharp(Buffer.from(rgba.data), { raw: { width: rgba.width, height: rgba.height, channels: 4 } })
       .rotate(deg)
       .resize(maxSide, maxSide, { fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality })
-      .toBuffer();
+      .jpeg({ quality, chromaSubsampling: '4:4:4' })
+      .toBuffer({ resolveWithObject: true });
+    console.info(`[frames] captured ${frame.width}x${frame.height} rotation=${deg} jpeg=${info.width}x${info.height} bytes=${jpeg.length} quality=${quality}`);
+    return jpeg;
   }
 
   close() {
@@ -81,6 +83,6 @@ export class FrameGrabber {
 }
 
 export async function thumb(jpeg: Buffer, side = 320) {
-  const small = await sharp(jpeg).resize(side, side, { fit: 'inside' }).jpeg({ quality: 70 }).toBuffer();
+  const small = await sharp(jpeg).resize(side, side, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 92, chromaSubsampling: '4:4:4' }).toBuffer();
   return `data:image/jpeg;base64,${small.toString('base64')}`;
 }
