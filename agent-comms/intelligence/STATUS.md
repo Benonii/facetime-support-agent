@@ -1,5 +1,12 @@
 # Intelligence status (part 3, Nikhil)
 
+## 2026-10-23: implementing hackathon voice → intelligence loop
+- Nikhil authorized implementation and prioritizes functionality over broad hardening/tests. Baseline 645609d; branch intelligence-cli-demo.
+- Scope: src/agent composite visual tool, fresh caller capture, asynchronous waiting updates, matching image/instruction output. Preserve Ben’s Shure greeting, KB and frontend. No shared DTO changes.
+- Acknowledge TEL-010/TEL-011 and SCR-002: preserve owned files/lines, all existing fields/stages/tracks, and matched state emissions.
+- No active overlapping claim on board; broadcast scope. Agent owner: report conflicts through board.
+- Next checkpoint: focused bridge tests + typecheck, then live readiness/handoff. Real phone acceptance still pending.
+
 ## 2026-10-23: destination-target correction verified on the five-photo sequence
 
 - Fixed root causes: vague connector text lost useful identity between camera angles; selecting the first generic withdraw step then circling the part to touch highlighted the misplaced cable. Added bounded earlier-image context to both transports/live bridge and destination-oriented connection planning/annotation. No device-specific destination or box coordinates added.

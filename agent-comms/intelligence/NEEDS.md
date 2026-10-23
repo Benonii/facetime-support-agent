@@ -69,6 +69,9 @@ Part-owner acknowledgment and live-call acceptance remain separate.
 
 ## From telephony (part 1)
 
+- [ ] **INT-014 — Native photo matching and honest progress.** New composite voice tool will use existing CallState and ScreenCue snapshotId/observationSnapshotId (no route/DTO changes). Please ignore mismatched image/target IDs and stale image onload callbacks in /phone; clear the ring on image error. Use screen.caption for waiting/error/next-view text where useful, avoid unconditional manual/circle claims. Optional later: presentation acknowledgement. Ben owns frontend implementation; no styling changes requested.
+
+
 No route, webhook, or DTO changes needed for this milestone. The recorded-photo
 runner must work independently of Chert and LiveKit. Later live integration must
 coordinate ownership of the single shared running agent/server.
