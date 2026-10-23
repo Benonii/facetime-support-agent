@@ -11,6 +11,12 @@ The Chert webhook (`/webhooks/chert`) is not wired to our line yet (Shared line,
 - **To test your own agent on the real line from your laptop:** run your agent with the shared LiveKit keys and a unique `AGENT_NAME` (e.g. `screens-agent`), then tell Ben the name. He restarts `chert dev --agent <name>` and the next FaceTime call goes to your agent. One call at a time on the line.
 - Your own cloudflared tunnel is still fine for `/phone` and your dashboard, but Chert doesn't use it.
 
+## iMessage fallback (`src/imessage/`, 2026-10-23)
+
+- `npm run imessage`: listens for texts to our Chert iMessage line and replies with the fix plus a circled photo. Prints the sender line(s) to text on start.
+- `npm run imessage:sim -- photo.jpg ["symptom"]`: offline test with mock intelligence and a fake Chert; writes `imessage-sim-*.png`.
+- Env: `CHERT_MESSAGING_SECRET` (required), `CHERT_TENANT_SLUG` (only if the API returns 404/2001), `INTELLIGENCE_PROVIDER` (defaults to `openai` when `OPENAI_API_KEY` is set, else `codex-cli`).
+
 ## Routes
 
 | Route | Who calls it | Body / reply |

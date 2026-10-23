@@ -1,5 +1,13 @@
 # Telephony status
 
+## 2026-10-23 2:40 PM PT: iMessage fallback route (`src/imessage/`, commit 3087fd8)
+- **Why:** inbound FaceTime to the shared line still shows "unavailable". This is the backup demo path.
+- **Flow:** customer texts a device photo (plus optional symptom) to our Chert iMessage number → `intelligence.observe` → `findFix` → `observe({step})` → reply with likely cause, step 1, and the photo with the part circled. `NEXT` sends the next step, `DONE` closes, `TECH` hands off.
+- **Transport:** Chert's event stream (`GET /api/v1/events/stream`), so no tunnel or webhook subscription is needed.
+- **Verified:** `npm run imessage:sim -- photo.jpg` with mock intelligence (text + circled PNG, HEIC input converted). Typecheck clean.
+- **Not verified:** real Chert API (needs `CHERT_MESSAGING_SECRET` in `.env.local`). Codex CLI 0.125 on Ben's laptop rejects every model with a ChatGPT login, so live runs need `OPENAI_API_KEY` or a Codex upgrade.
+- **Touches no other part's code.** Reuses `createIntelligence()` and the `Intelligence` contract only.
+
 ## 2026-10-23 2:15 PM PT: ack intelligence worker name
 - **Read** intelligence `d7e64d3` / PROVIDES: live worker is `AGENT_NAME=intelligence-demo npm run agent:cli` on one agreed machine.
 - **Telephony side:** when that worker shows `registered worker … agentName: "intelligence-demo"`, Ben restarts `chert dev --agent intelligence-demo`. Only one worker with that name. Until then the line stays on `support-agent`.
