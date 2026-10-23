@@ -1,5 +1,10 @@
 # Intelligence status (part 3, Nikhil)
 
+## 2026-10-23: live latency investigation
+- Nikhil requests web search on demand rather than every diagnosis. Implementing a local-first plan with optional internal search escalation and model/visual phase timings. Preserve the existing shared DTOs, frontend, and scripted Shure demo.
+- Current phone call shows repeated Realtime interruptions/active-response collisions; existing logs do not expose individual inference timings. No claim that search explains the full wait.
+- Next: focused search routing tests, one actual image timing, restart isolated support-test-nikhil worker.
+
 ## 2026-10-23: voice → intelligence interface landed (hackathon slice)
 - [PR #11](https://github.com/Benonii/facetime-support-agent/pull/11) merged. Source implementation 15dcd0c; restart the agreed worker after pulling main.
 - New composite analyze_device starts capture at verbal tool invocation, acknowledges through LiveKit ctx.update, gives one 15s reminder, uses one JPEG for observe/plan/annotation, and returns the instruction to Realtime for speech. Follow-up ready/next/verify and explicit stop are wired. Existing CallState + ScreenCue send matching images to /phone and GuideCard; no shared contract changes.
