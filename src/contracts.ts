@@ -86,6 +86,29 @@ export interface Ticket {
   created_at: string;
 }
 
+/** Optional display cues from the agent. These describe presentation, never trigger speech or tools. */
+export interface ScreenCue {
+  phase?: 'listening' | 'thinking' | 'speaking' | 'waiting';
+  caption?: { speaker: 'agent' | 'caller'; text: string };
+  /** Set both IDs when available. A mismatch prevents a target from being drawn on another photo. */
+  snapshotId?: string;
+  observationSnapshotId?: string;
+}
+
+/** What was actually rendered. Small enough to return alongside an agent tool result. No media or secrets. */
+export interface ScreenContext {
+  stage: CallState['stage'];
+  title: string;
+  instruction: string;
+  caption: { speaker: 'agent' | 'caller' | 'guide'; text: string };
+  phase: 'listening' | 'thinking' | 'speaking' | 'waiting';
+  view: 'snapshot' | 'no_camera' | 'unclear' | 'awaiting_analysis';
+  highlightVisible: boolean;
+  highlightedPart?: string;
+  nextUserAction: string;
+  issues: string[];
+}
+
 // Live state for one call. Rendered on the caller's FaceTime screen and on the dashboard.
 export interface CallState {
   callId: string;
@@ -96,6 +119,7 @@ export interface CallState {
   looks: number;
   ticket?: Ticket;
   lastSnapshot?: string; // data:image/jpeg;base64,... (small)
+  screen?: ScreenCue;
 }
 
 /** Part 4 implements this for the caller's FaceTime screen. Part 2 calls render() on every state change. */
@@ -103,6 +127,8 @@ export interface CallerScreen {
   publish(room: import('@livekit/rtc-node').Room): Promise<void>;
   render(state: CallState): Promise<void>;
   close(): Promise<void>;
+  /** Read after render() resolves. Optional so existing screen implementations remain compatible. */
+  getContext?(): ScreenContext | undefined;
 }
 
 // Agent → server (POST /api/events), server → dashboard (GET /api/stream, SSE, one JSON CallEvent per message).

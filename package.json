@@ -2,6 +2,8 @@
   "name": "facetime-support-agent",
   "version": "1.0.0",
   "scripts": {
+    "screens:demo": "node --import tsx src/screens/demo/server.ts",
+    "screens:test": "node --import tsx --test src/screens/screens.test.ts",
     "agent": "tsx --env-file=.env.local src/agent/agent.ts dev",
     "agent:mock": "MOCK_INTELLIGENCE=1 tsx --env-file=.env.local src/agent/agent.ts dev",
     "agent:start": "tsx --env-file=.env.local src/agent/agent.ts start",

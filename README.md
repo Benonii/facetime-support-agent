@@ -25,6 +25,8 @@ LiveKit room ── facetime-remote-audio ─▶ src/agent/  (OpenAI Realtime vo
 
 ## Setup (10 min)
 
+For the independent caller-screen and conversation demo, run `npm run screens:demo` and open http://localhost:8790. No API keys are needed. See [the screens handoff](src/screens/README.md) for the optional agent context contract.
+
 ```bash
 nvm use 22            # 22.23.2+ or 24.x
 npm install
