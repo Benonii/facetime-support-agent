@@ -1,9 +1,6 @@
-import OpenAI from 'openai';
-import { zodTextFormat } from 'openai/helpers/zod';
 import { Observation, type ObserveRequest } from '../contracts.js';
 
-let client: OpenAI | undefined;
-const openai = () => (client ??= new OpenAI());
+import { apiModel, type StructuredModel } from './model.js';
 
 export function normalizeObservation(observation: Observation, step?: string): Observation {
   if (!observation.device_visible) {
@@ -35,31 +32,14 @@ The customer is pointing their camera at a device that is not working (usually a
 - If the requested part is obscured or uncertain, return target null and request a clearer view.
   Without a current step, return target null. If the device is not visible, say so.`;
 
-export async function observe({ jpeg, ...opts }: ObserveRequest): Promise<Observation> {
-  const model = process.env.VISION_MODEL ?? 'gpt-5';
-  const res = await openai().responses.parse({
-    model,
-    // Keep tool latency low; the caller is waiting on the line.
-    ...(/^(gpt-5|o\d)/.test(model) ? { reasoning: { effort: 'low' as const } } : {}),
-    instructions: SYSTEM,
-    input: [
-      {
-        role: 'user',
-        content: [
-          {
-            type: 'input_text',
-            text: [
-              opts.focus ? `Agent focus: ${opts.focus}` : '',
-              opts.step ? `Current step for the customer: ${opts.step}` : '',
-              opts.previous ? `Notes so far: ${JSON.stringify({ ...opts.previous, target: undefined })}` : 'First look at this device.',
-            ].join('\n'),
-          },
-          { type: 'input_image', image_url: `data:image/jpeg;base64,${jpeg.toString('base64')}`, detail: 'high' },
-        ],
-      },
-    ],
-    text: { format: zodTextFormat(Observation, 'observation') },
+export async function observe({ jpeg, ...opts }: ObserveRequest, generate: StructuredModel = apiModel()): Promise<Observation> {
+  const result = await generate({
+    jpeg, model: process.env.VISION_MODEL ?? 'gpt-5', schema: Observation, name: 'observation', instructions: SYSTEM,
+    text: [
+      opts.focus ? `Agent focus: ${opts.focus}` : '',
+      opts.step ? `Current step for the customer: ${opts.step}` : '',
+      opts.previous ? `Notes so far: ${JSON.stringify({ ...opts.previous, target: undefined })}` : 'First look at this device.',
+    ].join('\n'),
   });
-  if (!res.output_parsed) throw new Error('vision: no parsed output');
-  return normalizeObservation(res.output_parsed, opts.step);
+  return normalizeObservation(result, opts.step);
 }

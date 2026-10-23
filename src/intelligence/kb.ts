@@ -1,9 +1,6 @@
-import OpenAI from 'openai';
-import { zodTextFormat } from 'openai/helpers/zod';
 import { FixPlan, type FixRequest } from '../contracts.js';
 
-let client: OpenAI | undefined;
-const openai = () => (client ??= new OpenAI());
+import { apiModel, type StructuredModel } from './model.js';
 
 interface KeenableResult {
   title: string;
@@ -55,7 +52,7 @@ Fiber / PON / LOS fault -> check for an obviously bent cable without disconnecti
 Do not open enclosures or factory-reset devices. Persistent faults after ordinary external cable/power checks need a technician.
 `;
 
-export async function findFix({ jpeg, observation: o, symptom }: FixRequest): Promise<FixPlan> {
+export async function findFix({ jpeg, observation: o, symptom }: FixRequest, generate: StructuredModel = apiModel()): Promise<FixPlan> {
   if (!Buffer.isBuffer(jpeg) || jpeg.length === 0) {
     throw new TypeError('findFix: jpeg must be a non-empty Buffer from the observed frame');
   }
@@ -74,10 +71,8 @@ export async function findFix({ jpeg, observation: o, symptom }: FixRequest): Pr
   } catch (e) {
     console.warn('[kb] web search unavailable; using observed evidence and generic guidance.');
   }
-  const model = process.env.EXTRACT_MODEL ?? 'gpt-5-mini';
-  const res = await openai().responses.parse({
-    model,
-    ...(/^(gpt-5|o\d)/.test(model) ? { reasoning: { effort: 'low' as const } } : {}),
+  const result = await generate({
+    jpeg, model: process.env.EXTRACT_MODEL ?? 'gpt-5-mini', schema: FixPlan, name: 'fix_plan',
     instructions:
       'You write the fix plan a support agent will walk a customer through on a live call. ' +
       'Inspect the attached camera image alongside the observation and caller symptom. ' +
@@ -90,16 +85,12 @@ export async function findFix({ jpeg, observation: o, symptom }: FixRequest): Pr
       'Never instruct factory reset, opening an enclosure or disconnecting fiber. ' +
       'State a concrete condition for technician help. List only provided web URLs whose contents actually support the plan. ' +
       'If search returns no useful evidence, leave sources empty and express uncertainty.',
-    input: [{ role: 'user', content: [{ type: 'input_text', text: [
+    text: [
       `Customer says: ${symptom}`,
       `Seen on camera: ${JSON.stringify({ device: o.device, indicators: o.indicators, ports: o.ports, findings: o.findings })}`,
       `Generic router guidance:\n${PLAYBOOK}`,
       `Web results:\n${web.map((r, n) => `[${n}] ${r.title}\n${r.url}\n${r.snippet ?? r.description ?? ''}`).join('\n\n') || '(none)'}`,
-    ].join('\n\n') }, {
-      type: 'input_image', image_url: `data:image/jpeg;base64,${jpeg.toString('base64')}`, detail: 'high',
-    }] }],
-    text: { format: zodTextFormat(FixPlan, 'fix_plan') },
+    ].join('\n\n'),
   });
-  if (!res.output_parsed) throw new Error('kb: no plan');
-  return groundPlan(res.output_parsed, web);
+  return groundPlan(result, web);
 }
