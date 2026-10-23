@@ -19,6 +19,9 @@ export function present(state: CallState, annotationCurrent = true): ScreenConte
   if (unclear) issues.push('The latest observation could not identify the device.');
   if (!current && hasPhoto) issues.push('Waiting for an observation matched to this snapshot.');
   const target = state.observation?.target;
+  const evidence = current && view === 'snapshot' && state.observation?.device_visible
+    ? state.observation.findings.map((finding) => finding.trim()).find(Boolean)
+    : undefined;
   if (target && !validTarget(target.box)) issues.push('The target box is invalid; no highlight is shown.');
   const highlightVisible = state.stage === 'guiding' && !!state.step && view === 'snapshot'
     && !!target && validTarget(target.box);
@@ -30,8 +33,8 @@ export function present(state: CallState, annotationCurrent = true): ScreenConte
   };
   const defaults: Record<CallState['stage'], string> = {
     waiting: 'Say hello when you’re ready. We’ll work through this together.',
-    looking: 'Hold your camera steady so the device and its labels are clear.',
-    diagnosing: 'Checking the observations and available instructions.',
+    looking: evidence ? `Observed: ${evidence}` : 'Hold your camera steady so the device and its labels are clear.',
+    diagnosing: evidence ? `Using this observation: ${evidence}` : 'Checking the observations and available instructions.',
     guiding: view === 'awaiting_analysis' ? 'The target will appear after this new view has been checked.'
       : highlightVisible ? `The circle shows ${target!.label}.` : 'Follow the instruction below, then tell me what changed.',
     resolved: 'Your issue has been marked resolved. Your case details are below.',

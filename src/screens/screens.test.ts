@@ -3,6 +3,7 @@ import { after, test } from 'node:test';
 import sharp from 'sharp';
 import { dispose, type Room, TrackSource } from '@livekit/rtc-node';
 import type { CallState } from '../contracts.js';
+import { createDeviceTools } from '../agent/device-tools.js';
 import { GuideCard } from './card.js';
 import { createScenarios } from './demo/scenarios.js';
 import { present, validTarget } from './presenter.js';
@@ -48,6 +49,15 @@ test('default guide copy is distinguished from actual agent or caller captions',
   assert.equal(present(scene('guide')).caption.speaker, 'agent');
   assert.equal(present(scene('ports')).caption.speaker, 'caller');
   assert.equal(present(scene('technician')).instruction.startsWith('Requested visit:'), true);
+});
+
+test('live intelligence findings become honest guide copy when no transcript caption is supplied', () => {
+  const state = scene('front');
+  delete state.screen;
+  state.observation!.findings = ['MagSafe port visible on the left side'];
+  assert.deepEqual(present(state).caption, { speaker: 'guide', text: 'Observed: MagSafe port visible on the left side' });
+  state.screen = { snapshotId: 'new', observationSnapshotId: 'old' };
+  assert.equal(present(state).caption.text.includes('MagSafe'), false);
 });
 
 test('all demo states export the actual 720 × 1280 caller card without live credentials', async () => {
@@ -116,5 +126,42 @@ test('long labels and instruction text render without throwing', async () => {
     await card.render(state); assert.ok((await card.exportPng()).length > 1000);
     assert.ok(card.getContext()!.instruction.endsWith('…'));
     assert.ok(card.getContext()!.issues.some((issue) => issue.includes('shorter step')));
+  } finally { await card.close(); }
+});
+
+test('the live intelligence bridge reaches the caller card with its matching photo, step, and target', async () => {
+  const jpeg = await sharp({ create: { width: 320, height: 180, channels: 3, background: '#6b7370' } }).jpeg().toBuffer();
+  const frames = [jpeg, jpeg];
+  const state: CallState = { callId: 'live-bridge', stage: 'waiting', looks: 0 };
+  const card = new GuideCard();
+  const intelligence = {
+    observe: async ({ step }: { step?: string }) => ({
+      device_visible: true,
+      device: { type: 'other' as const, brand: 'Apple', model: 'MacBook' },
+      indicators: [],
+      ports: [{ label: 'MagSafe', cable_connected: false }],
+      findings: ['MagSafe port visible on the left side'],
+      target: step ? { label: 'MagSafe port', box: [0.12, 0.3, 0.28, 0.55] } : null,
+      next_shot: '', confidence: 0.9,
+    }),
+    findFix: async () => ({ likely_cause: 'Port identification', steps: ['Locate the MagSafe port'], needs_technician_if: 'The port is damaged', sources: [] }),
+  };
+  const emit = async () => card.render(state);
+  const tools = createDeviceTools({
+    intelligence, state,
+    grabJpeg: async () => frames.shift() ?? null,
+    snapshot: async (image) => `data:image/jpeg;base64,${image.toString('base64')}`,
+    emit,
+  });
+  try {
+    await emit();
+    await tools.lookAtDevice('left-side ports');
+    assert.equal(card.getContext()!.caption.text, 'Observed: MagSafe port visible on the left side');
+    await tools.findFix('Where does this charger connect?');
+    await tools.showStep(1);
+    assert.equal(card.getContext()!.instruction, 'Locate the MagSafe port');
+    assert.equal(card.getContext()!.highlightVisible, true);
+    assert.equal(card.getContext()!.highlightedPart, 'MagSafe port');
+    assert.ok((await card.exportPng()).length > 1000);
   } finally { await card.close(); }
 });
