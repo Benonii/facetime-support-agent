@@ -7,6 +7,11 @@ integration, noting accepted / needs discussion, your planned change, and any
 incompatible work already underway. Publishing these asks does not imply agreement.
 Independent UI and provider work can proceed while replies are pending.
 
+Update: Nikhil subsequently explicitly authorized this session to integrate the
+agent caller and push main. INT-001/002/003/004 are implemented together in the
+current integration slice; check the newest STATUS for landed commit and checks.
+Part-owner acknowledgment and live-call acceptance remain separate.
+
 ## From agent (part 2)
 
 - [ ] **INT-001 — Coordinate the required-image contract before integration.** Target:
@@ -60,10 +65,16 @@ coordinate ownership of the single shared running agent/server.
 
 ## From demo owner / resources
 
-- [ ] **INT-009 — Before real-device acceptance:** choose the actual device/fault and provide a faulty
-  photo, comparison photo, and obscured view, plus the symptom and human-confirmed
-  facts. Router/WAN is an example only; no product has been selected. Do not substitute the architecture sketch or generated
-  router pictures. Confirm visibility of labels/ports rather than assuming them.
-- [ ] **INT-010 — During implementation:** resources agent to report Nebius activation,
+- [x] **INT-009 — Recorded proof selected:** Nikhil supplied laptop front/left/right
+  and loose-connector photos and chose port identification / incompatibility as
+  the current proof. This supersedes the router-fault example. Connected-state
+  charging or repair validation is a later milestone, not claimed by this proof.
+- [x] **INT-010 — During implementation:** resources agent to report Nebius activation,
   key availability, and verified model access through private coordination. No
   secrets in Git. This does not block the CLI demo or authorize a Nebius adapter.
+
+- **INT-011 — Screens integration fix (implemented):** reviewer confirmed clearing
+  `CallState.lastSnapshot` did not clear GuideCard's cached image. This session
+  applies the narrow cache-reset fix with a rendered-pixel regression as part of
+  the authorized integration; no layout or DTO changes. Screens owner: preserve
+  this behavior in your design work.

@@ -1,9 +1,30 @@
 # Intelligence provides (part 3, `src/intelligence/`)
 
 Owner: Nikhil. Approved plan and evidence status: [STATUS.md](STATUS.md).
-Implementation is locally tested at `4a7356c`, **not yet merged into main**.
-The interfaces below are the integration target; `src/contracts.ts` remains the
-type authority after the contract PR lands.
+Implementation includes Codex CLI and OpenAI providers, recorded-photo outputs,
+and the existing LiveKit tools wired through a serialized per-call bridge.
+See the newest STATUS entry for the exact pushed commit and verification.
+
+## Run the CLI-backed live worker
+
+On the one agreed worker machine, use Node 22.23.2+ or 24, installed dependencies,
+`codex login status`, and `.env.local` containing the shared LiveKit keys plus an
+OpenAI Realtime API key. Then run `AGENT_NAME=intelligence-demo npm run agent:cli`.
+Tell Ben the chosen name so `chert dev --agent intelligence-demo` dispatches to it.
+Do not run another worker with the same name. CLI login does not authenticate voice.
+Caller video on the current Chert CLI path remains unverified; `/phone` is the
+camera fallback. No worker or real call has been started by this session.
+
+Tools remain `look_at_device`, `find_fix`, `show_step`, `check_result`. Device tool
+calls queue per call; missing frames and model errors return explicit retry guidance.
+Plan survives a new camera angle. New step/photo/target publish together after
+observation. Clearing a snapshot now clears GuideCard's cached image as well.
+Screens should keep rendering existing `CallState`; no new endpoint or DTO.
+
+Current proof: laptop charging-port identification and an incompatible barrel
+connector, using real supplied photos. It does not establish a hardware fault,
+correct adapter wattage, successful charging, or completed FaceTime integration.
+Original images/results remain local; they contain personal screen content.
 
 ## Agent to intelligence
 
