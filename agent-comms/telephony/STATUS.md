@@ -1,5 +1,10 @@
 # Telephony status
 
+## 2026-10-23 3:45 PM PT: demo product is the Shure wireless handheld mic (heads up, intelligence)
+- **Changed (small, outside telephony, asked by Ben):** `src/intelligence/kb.ts` now loads product knowledge from `src/intelligence/products/shure-wireless-handheld.md` (override with `PRODUCT_KB=<path>`) instead of the router PLAYBOOK. `vision.ts` lists a wireless mic as a subject. `src/agent/device-tools.ts` now logs `[tools] device analysis failed: …` instead of failing silently.
+- **Env:** set `BRAND_NAME=Shure` in `.env.local` (agent + server). Telephony defaults to Shure.
+- **Debug "no image":** run `npm run agent` with `OPENAI_API_KEY` (not `agent:cli`); expect `[frames] reading video` then tool calls; any failure now prints `[tools] …`.
+
 ## 2026-10-23 3:20 PM PT: demo path is now our own web call PWA (`/phone`), Chert dropped
 - **Why:** Chert inbound still "unavailable". Ben chose our own frontend into LiveKit.
 - **Done:** `/phone` call app (voice ring reacting to the agent's audio, Look/Diagnose/Fix/Done progress from `/api/stream`, mute, flip, hang up, iOS audio unlock, wake lock), installable PWA (manifest, icons, service worker). `/api/dev-session` takes the warm room and returns the agent's `callId`; `/api/dev-session/end` deletes the room. 17/17 tests; flow checked in headless Chromium with a stubbed LiveKit client.

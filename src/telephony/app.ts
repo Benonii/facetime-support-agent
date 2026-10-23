@@ -155,10 +155,10 @@ export function createTelephony(lk: LiveKitOps, cfg: TelephonyConfig) {
   const page = (f: string) => readFileSync(new URL(`../../public/${f}`, import.meta.url), 'utf8');
 
   app.get('/', (c) => c.html(page('dashboard.html').replace('__TRUCK_ROLL_COST__', String(cfg.truckRollCost))));
-  app.get('/manifest.webmanifest', (c) => c.body(page('manifest.webmanifest').replaceAll('__BRAND__', cfg.brandName ?? 'Lumen Fiber'), 200, { 'Content-Type': 'application/manifest+json' }));
+  app.get('/manifest.webmanifest', (c) => c.body(page('manifest.webmanifest').replaceAll('__BRAND__', cfg.brandName ?? 'Shure'), 200, { 'Content-Type': 'application/manifest+json' }));
   app.get('/sw.js', (c) => c.body(page('sw.js'), 200, { 'Content-Type': 'text/javascript', 'Cache-Control': 'no-cache' }));
   app.get('/icons/:f{[a-z0-9-]+\\.png}', (c) => c.body(readFileSync(new URL(`../../public/icons/${c.req.param('f')}`, import.meta.url)), 200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' }));
-  app.get('/phone', (c) => c.html(page('dev-phone.html').replaceAll('__BRAND__', cfg.brandName ?? 'Lumen Fiber')));
+  app.get('/phone', (c) => c.html(page('dev-phone.html').replaceAll('__BRAND__', cfg.brandName ?? 'Shure')));
   app.get('/health', (c) => c.json({ ok: true, warm_room_ready: warmReady, active_calls: seen.size }));
 
   // Chert BYOR webhook. Line policy customer_decides, Integration URL https://<tunnel>/webhooks/chert.

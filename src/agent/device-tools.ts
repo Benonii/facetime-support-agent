@@ -42,7 +42,8 @@ export function createDeviceTools({ intelligence, state, grabJpeg, snapshot, emi
   const run = <T>(work: () => Promise<T>) => {
     const next = queue.then(async () => {
       try { return await work(); }
-      catch {
+      catch (e) {
+        console.warn(`[tools] device analysis failed: ${(e as Error)?.message ?? e}`);
         // Do not expose provider output/secrets or leave an old circle under a new step.
         referenceFrames = []; clearImage(); state.step = undefined; state.plan = undefined; state.stage = 'waiting';
         await emit();
