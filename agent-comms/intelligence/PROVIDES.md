@@ -65,3 +65,45 @@ not change the existing `lastSnapshot` transport or introduce a new screen DTO.
 
 No intelligence work is required in telephony's accept path. The agent owns
 progress speech and how recoverable intelligence failures are surfaced to callers.
+
+## Pre-build wiring example for parts 2 and 4
+
+This is integration pseudocode for the required-image contract, not a new API or
+a claim that the full flow is tested. The tool arguments visible to the voice
+model stay small: the agent captures JPEG bytes internally rather than asking
+the voice model to supply image data.
+
+```ts
+// look_at_device(focus): agent captures and retains this exact pair.
+const observation = await intelligence.observe({ jpeg, focus });
+const observed = { jpeg, observation };
+
+// find_fix(symptom): return the structured plan to the voice model to explain.
+const plan = await intelligence.findFix({ ...observed, symptom });
+
+// show_step(n): fixed-photo demo reuses jpeg; live agent captures a fresh frame.
+const text = plan.steps[n - 1]; // validate n before proceeding
+const annotated = await intelligence.observe({ jpeg: stepJpeg, step: text });
+// Update these together, only if the result still belongs to the active step.
+state.plan = plan;
+state.observation = annotated;
+state.lastSnapshot = await thumb(stepJpeg, 640); // same orientation/aspect ratio
+state.step = { n, text };
+state.stage = 'guiding';
+await card.render(state); // screens turns state into its existing video track
+// Agent also posts CallEvent for the dashboard and returns a small tool result.
+return { step: text, circled: annotated.target?.label ?? null };
+```
+
+The LiveKit voice agent chooses how to say the returned facts and instruction.
+Screens uses `step.text`, `lastSnapshot`, and `observation.target`; it does not need
+the model prompt, retrieval snippets, raw JPEG Buffer, or a separate intelligence
+connection. Its video track and the agent's audio reach the caller through the
+same LiveKit room. The projector dashboard separately receives state events via
+telephony's SSE relay.
+
+For an unplugged-WAN case, the intended sequence is: report only visible evidence,
+propose a supported next step, then display and speak that same step with a target
+only if the relevant port is visible. Connecting a cable in a comparison photo
+must not automatically produce a resolved ticket. Missing images, timeouts, and
+invalid outputs must remain failures/requests for more evidence, not mock success.

@@ -1,5 +1,36 @@
 # Intelligence status (part 3, Nikhil)
 
+## 2026-10-23: pre-build handoff to agent and screens owners
+
+- **Owner/session:** part 3, Nikhil's intelligence implementation session. This
+  update is written by the coding agent on Nikhil's explicit request to communicate
+  integration needs before building.
+- **Communication branch:** `intelligence-prebuild-handoff`, based on shared main
+  `e42d6db`. The initial plan (PR #4) and session protocol (PR #3) are now merged.
+  Upstream write access is still unavailable to this account, so updates use a
+  fork PR. Only `agent-comms/intelligence/` changes in this checkpoint.
+- **Planned outcome/files:** CLI provider, focused provider tests, recorded-photo
+  runner and preview export in `src/intelligence/`. Preserve existing output DTOs.
+  The already-local required-image change touches `src/contracts.ts`; its matching
+  caller touches `src/agent/agent.ts` and needs the agent owner's coordination.
+  No edits to screens or telephony are planned by this owner.
+- **Before we build:** [NEEDS.md](NEEDS.md) now gives parts 2 and 4 stable request
+  IDs `INT-001` through `INT-008`. [PROVIDES.md](PROVIDES.md) includes the exact
+  tool-result-to-voice and `CallState`-to-screen sequence. Screens can build with
+  existing fixtures; agent can prepare routing and waiting/error behavior.
+- **Dependencies:** the agent owner must confirm the image bridge/caller change
+  before cross-owner integration. Screens must confirm the existing state is
+  sufficient. Actual router photos remain pending. CLI authentication is local
+  to the machine running intelligence; it does not provision Realtime voice.
+- **Acknowledgments:** none received yet. No agent/screens coordination folders
+  exist on the inspected shared main. Repository publication makes this visible
+  for their next fetch; it does not prove they have read or accepted the requests.
+- **Next checkpoint:** after publishing this handoff, begin independent provider
+  work; fetch coordination updates at safe checkpoints (roughly 10–15 minutes)
+  and before integrating shared contract/caller changes. Pause only disputed
+  dependent changes. No new provider implementation has started in this checkpoint.
+- **Checks:** documentation whitespace and relative links only; no runtime changes.
+
 ## 2026-10-23: approved demo plan, published before implementation
 
 **Team handoff:** build around the image-in / structured-data-out bridge in
