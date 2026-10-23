@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { z } from 'zod';
 
 import { FixPlan, type FixRequest } from '../contracts.js';
 
@@ -61,15 +62,11 @@ export async function findFix({ jpeg, referenceJpegs, observation: o, symptom }:
       sources: [],
     };
   }
-  const query = searchQuery({ observation: o, symptom });
-  let web: KeenableResult[] = [];
-  try {
-    web = await keenableSearch(query);
-  } catch (e) {
-    console.warn('[kb] web search unavailable; using observed evidence and generic guidance.');
-  }
-  const result = await generate({
-    jpeg, referenceJpegs, model: process.env.EXTRACT_MODEL ?? 'gpt-5-mini', schema: FixPlan, name: 'fix_plan',
+  // Decide whether outside knowledge is needed in the planning call we already make.
+  // This is internal; callers and screens still receive the original FixPlan shape.
+  const DraftPlan = FixPlan.extend({ search_query: z.string().describe('Empty unless web research is needed; otherwise one focused manufacturer/manual query') });
+  const base = {
+    jpeg, referenceJpegs, model: process.env.EXTRACT_MODEL ?? 'gpt-5-mini',
     instructions:
       'You write the fix plan a support agent will walk a customer through on a live call. ' +
       'Inspect the attached camera image alongside the observation and caller symptom. ' +
@@ -85,13 +82,35 @@ export async function findFix({ jpeg, referenceJpegs, observation: o, symptom }:
       'Do not invent cable colors, port labels or a device model. If evidence is insufficient, ask for a specific view as the next step. ' +
       'Never instruct factory reset, opening an enclosure or disconnecting fiber. ' +
       'State a concrete condition for technician help. List only provided web URLs whose contents actually support the plan. ' +
-      'If search returns no useful evidence, leave sources empty and express uncertainty.',
+      'If no sources support a claim, leave sources empty; use visible facts and matching product knowledge, and express uncertainty only where warranted.',
     text: [
       `Customer says: ${symptom}`,
       `Seen on camera: ${JSON.stringify({ device: o.device, indicators: o.indicators, ports: o.ports, findings: o.findings })}`,
       `Product knowledge:\n${PLAYBOOK || '(none)'}`,
-      `Web results:\n${web.map((r, n) => `[${n}] ${r.title}\n${r.url}\n${r.snippet ?? r.description ?? ''}`).join('\n\n') || '(none)'}`,
+      'Web results: not requested yet.',
     ].join('\n\n'),
+  };
+  const draft = await generate({
+    ...base, schema: DraftPlan, name: 'fix_plan',
+    instructions: base.instructions +
+      ' First use the image, observation and product knowledge. Return search_query="" for ordinary visible port, cable, power or mute guidance. ' +
+      'Set search_query only if the caller explicitly requests web/manual research, or the next safe action needs model-specific instructions missing from the supplied knowledge. ' +
+      'An unclear photo, unreadable model, or hidden port needs a better camera view, not web search. ' +
+      'When research is needed, draft only a safe interim step; do not guess the missing procedure.',
+  });
+  const localPlan = groundPlan(FixPlan.parse(draft), []);
+  // Missing field is tolerated for existing custom model adapters; production schema requires it.
+  const query = draft.search_query?.trim();
+  if (!query) { console.info('[kb] search skipped'); return localPlan; }
+  const start = performance.now();
+  let web: KeenableResult[] = [];
+  try { web = await keenableSearch(query); }
+  catch { console.warn('[kb] requested search unavailable; keeping the evidence-based draft.'); }
+  console.info(`[kb] requested search ${Math.round(performance.now()-start)}ms results=${web.length}`);
+  if (!web.length) return localPlan;
+  const result = await generate({
+    ...base, schema: FixPlan, name: 'researched_fix_plan',
+    text: base.text + `\n\nRequested web evidence:\n${web.map((r,n)=>`[${n}] ${r.title}\n${r.url}\n${r.snippet??r.description??''}`).join('\n\n')}`,
   });
   return groundPlan(result, web);
 }

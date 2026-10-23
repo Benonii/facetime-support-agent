@@ -145,7 +145,7 @@ This is a local demo integration, not a public inference service.
 
 For OpenAI, put `OPENAI_API_KEY` in gitignored `.env.local`. `VISION_MODEL` defaults
 to `gpt-5`; `EXTRACT_MODEL` to `gpt-5-mini`. Both providers use application-side
-Keenable retrieval (`KEENABLE_API_KEY` optional; public endpoint otherwise).
+Keenable retrieval only when requested or needed (`KEENABLE_API_KEY` optional; public endpoint otherwise).
 CLI does not replace the separate OpenAI Realtime voice session.
 
 The runner rotates/resizes the input once, then supplies the same processed JPEG
@@ -250,8 +250,18 @@ geometric correctness guarantee; inspect replay output on the actual device.
 - `findFix` requires a nonempty JPEG Buffer, even for an invisible observation.
   It sends the image itself to the diagnosis model alongside observation/symptom.
   The boundary checks presence/type, not JPEG decoding; callers supply valid JPEGs.
-- Search includes the device, symptom and lights. A search failure leaves the
-  observed evidence and generic router guidance available; it is not a live manual.
+- Planning first uses the photo, observation, and matching product notes. Its private
+  `search_query` is empty for ordinary visible cable/port/power/mute guidance. It
+  requests one Keenable lookup only for explicit caller web/manual research or
+  model-specific knowledge missing from the notes. A blurry view needs a new photo,
+  not search. Voice forwards explicit research requests in the question.
+- A requested lookup is capped at six seconds. Useful results get one revised plan;
+  unavailable/empty search retains the safe draft with no citations. Shared FixPlan
+  output is unchanged. No extra model call is made just to decide whether to search.
+- Live logs report model operation/duration and visual capture/observe/plan/publication
+  timings without photos or caller text. The three model calls still dominate latency:
+  one measured CLI port-guidance replay took 24.4s with search skipped. This does not
+  establish handheld call latency or fix the observed Realtime response collisions.
 - Plans have at most six nonempty steps. Source URLs must have appeared in search;
   titles come from those results. This validates provenance, not semantic support.
 - The voice agent owns speech and `CallState`; screens render its snapshot/target.

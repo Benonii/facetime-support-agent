@@ -80,7 +80,7 @@ test('diagnosis sends the exact image and symptom to the model', async () => {
       id: 'resp_test', object: 'response', created_at: 0, status: 'completed',
       model: 'test-model', error: null, incomplete_details: null,
       output: [{ type: 'message', id: 'msg_test', role: 'assistant', status: 'completed',
-        content: [{ type: 'output_text', text: JSON.stringify(plan), annotations: [], logprobs: [] }] }],
+        content: [{ type: 'output_text', text: JSON.stringify({...plan,search_query:''}), annotations: [], logprobs: [] }] }],
     });
   };
   try {
@@ -122,4 +122,34 @@ test('plan drops invented sources and caps guidance at six nonempty steps', () =
   assert.deepEqual(plan.sources, [source]);
   assert.equal(plan.steps.length, 6);
   assert.equal(plan.steps[0], 'Connect WAN');
+});
+
+test('routine visual guidance skips search; explicit research and knowledge gaps escalate once', async () => {
+  const savedFetch = globalThis.fetch;
+  const source = {title:'Manufacturer manual',url:'https://example.com/manual',snippet:'Model-specific pairing instructions'};
+  let searches = 0;
+  globalThis.fetch = async () => { searches++; return Response.json({results:[source]}); };
+  const base = {likely_cause:'Visible connection',steps:['Connect the visible port'],needs_technician_if:'Still failing',sources:[]};
+  try {
+    let calls = 0;
+    const local = await findFix({jpeg,observation,symptom:'Where does this plug go?'}, async r => {
+      calls++; return r.schema.parse({...base,search_query:''});
+    });
+    assert.equal(searches,0); assert.equal(calls,1); assert.deepEqual(local,base);
+    for (const symptom of ['Search the manufacturer manual for pairing instructions','Pairing is still failing; the local notes do not cover this model']) {
+      calls=0;
+      const researched = await findFix({jpeg,observation,symptom}, async r => {
+        calls++;
+        return r.schema.parse(calls===1 ? {...base,search_query:'Example R1 official pairing instructions'} : {...base,sources:[source]});
+      });
+      assert.equal(calls,2); assert.deepEqual(researched.sources,[{title:source.title,url:source.url}]);
+    }
+    assert.equal(searches,2);
+    globalThis.fetch=async()=>{throw Error('unavailable');};
+    calls=0;
+    const fallback=await findFix({jpeg,observation,symptom:'Look up the manual'},async r=>{
+      calls++;return r.schema.parse({...base,search_query:'Example R1 manual'});
+    });
+    assert.equal(calls,1);assert.deepEqual(fallback.sources,[]);
+  } finally {globalThis.fetch=savedFetch;}
 });
