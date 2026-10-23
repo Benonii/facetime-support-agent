@@ -60,9 +60,9 @@ coordinate ownership of the single shared running agent/server.
 
 ## From demo owner / resources
 
-- [ ] **INT-009 — Before real-device acceptance:** provide the actual router's unplugged-WAN
-  rear photo, connected comparison photo, and obscured view, plus the symptom and
-  human-confirmed facts. Do not substitute the architecture sketch or generated
+- [ ] **INT-009 — Before real-device acceptance:** choose the actual device/fault and provide a faulty
+  photo, comparison photo, and obscured view, plus the symptom and human-confirmed
+  facts. Router/WAN is an example only; no product has been selected. Do not substitute the architecture sketch or generated
   router pictures. Confirm visibility of labels/ports rather than assuming them.
 - [ ] **INT-010 — During implementation:** resources agent to report Nebius activation,
   key availability, and verified model access through private coordination. No

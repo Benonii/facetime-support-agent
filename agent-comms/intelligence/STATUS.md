@@ -1,5 +1,16 @@
 # Intelligence status (part 3, Nikhil)
 
+## 2026-10-23: checkpoint 2 — runner pushed; hardware choice still open
+
+- User clarification: **no demo product/fault has been selected**. Router/WAN was an example, not a fixed requirement. Do not build product-specific UI or assume a manual corpus. Recorded inputs and real-device acceptance wait for that choice.
+- Photo runner/preview pushed at `194c924` in [PR #7](https://github.com/Benonii/facetime-support-agent/pull/7); later wording generalizes the default symptom. `--step` selects a returned step (default 1); `--out` creates a new bundle of processed JPEG, result JSON, PNG, model identity and timings. `--facts` records expected human facts without feeding answers to the model.
+- Real saved-auth negative case on the supplied planning sketch: no device visible, no invented ports/cause/target, request for a real device view. Observing 5.914 s, annotation 6.263 s, total 12.410 s; diagnosis/search skipped on no-device evidence. Preview inspected. This is not a fault-diagnosis benchmark.
+- Two additional focused runner checks pass; independent whole-branch review underway before final verification. No actual faulty/comparison/obscured hardware runs yet.
+- Separate Keenable research session requested by Nikhil is exploring product-agnostic failure queries, tuning and result provenance. It owns no shared implementation files. Current simple application-side search remains; no product-specific corpus work yet.
+- Resources reply received: Nebius activation, key and model access remain unverified. No adapter or repeated promo request; CLI demo proceeds independently.
+- Parts 2/4: the handoff fields and requests INT-001 through INT-008 are unchanged. The same processed image, selected instruction and optional target must travel together. Model provider choice remains private to intelligence.
+
+
 ## 2026-10-23: implementation checkpoint 1 — CLI provider pushed
 
 - Branch `intelligence-cli-demo`, commit `2f83f37`, draft [PR #7](https://github.com/Benonii/facetime-support-agent/pull/7).
