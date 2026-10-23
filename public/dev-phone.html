@@ -70,11 +70,6 @@
   #stage.remote #agentVideo { opacity: 1; }
   #stage.remote #me { inset: auto 16px calc(24px + var(--safe-b)) auto; left: 16px; width: 104px; height: 150px; border-radius: 18px;
     box-shadow: 0 8px 30px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.12); z-index: 4; transition: width 400ms var(--ease), height 400ms var(--ease), border-radius 400ms var(--ease); }
-  #flip { position: absolute; left: 24px; bottom: calc(32px + var(--safe-b)); z-index: 5; width: 32px; height: 32px; border-radius: 50%; border: 0;
-    background: var(--glass); color: var(--ink); display: grid; place-items: center; box-shadow: 0 0 0 1px var(--hair); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
-  #flip svg { width: 16px; height: 16px; }
-  #stage:not(.remote) #flip { left: auto; right: 16px; bottom: calc(24px + 4 * 62px + var(--safe-b)); width: 50px; height: 50px; }
-  #stage:not(.remote) #flip svg { width: 22px; height: 22px; }
 
   /* Top-left: who you are talking to, and whether they hear you */
   #top { position: absolute; left: 16px; right: 16px; top: calc(12px + var(--safe-t)); z-index: 6; pointer-events: none; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
@@ -131,7 +126,8 @@
   #guide.min { transform: scale(0.34); }
   #guide.min .cap { display: none; }
   .shot { position: relative; line-height: 0; background: rgba(0,0,0,.3); }
-  .shot img { width: 100%; max-height: 42vh; object-fit: contain; display: block; }
+  .shot img { width: 100%; max-height: 42vh; object-fit: contain; display: block; transition: opacity 300ms var(--ease); }
+  #guide.stale .shot img { opacity: 0.45; } /* the technician is taking a new photo; the old one stays up, dimmed */
   #ring { position: absolute; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 0 2px rgba(0,0,0,.55), inset 0 0 0 2px rgba(0,0,0,.55);
     animation: ring-pulse 1.2s ease-in-out infinite; display: none; }
   @keyframes ring-pulse { 50% { transform: scale(1.08); } }
@@ -148,6 +144,7 @@
   .ctl { width: 50px; height: 50px; border-radius: 50%; border: 0; background: var(--glass); color: var(--ink); display: grid; place-items: center;
     box-shadow: 0 0 0 1px var(--hair); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(16px); transition: background 150ms, color 150ms, transform 120ms var(--ease); }
   .ctl:active { transform: scale(0.92); }
+  .ctl:disabled { opacity: 0.6; }
   .ctl svg { width: 22px; height: 22px; }
   .ctl.off { background: var(--ink); color: var(--primary); }
   #hang { background: var(--end); box-shadow: none; }
@@ -208,11 +205,10 @@
 
     <button id="unmute">Tap to hear the technician</button>
 
-    <button id="flip" aria-label="Switch camera">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><path d="M9 13a3 3 0 0 1 5-2m1 2a3 3 0 0 1-5 2"/></svg>
-    </button>
-
     <div id="bar">
+      <button id="flip" class="ctl" aria-label="Switch camera">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><path d="M15.4 13.6a3.4 3.4 0 0 1-5.9 2.2M8.6 13.6a3.4 3.4 0 0 1 5.9-2.2"/><path d="M14.5 9.5v2.3h-2.3M9.5 17.7v-2.3h2.3"/></svg>
+      </button>
       <button id="mute" class="ctl" aria-label="Mute microphone" aria-pressed="false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
       </button>
@@ -254,13 +250,15 @@ function renderVoice() {
   else if (agentTalking || agentState === 'speaking') who = 'Talking';
   else if (thinking) who = busy ? (stage === 'looking' ? 'Looking' : 'Diagnosing') : 'Thinking';
   else if (callerTalking) who = 'Hearing you';
-  $('who').textContent = who;
+  setText('who', who);
   $('orb').classList.toggle('thinking', thinking && !agentTalking);
   $('scan').classList.toggle('on', busy);
   const what = stage === 'guiding' && lastStep ? `Step ${lastStep.n}: ${lastStep.text}` : STAGE_TEXT[stage] || STAGE_TEXT.waiting;
-  $('what').textContent = busy ? `${what}…` : what;
+  setText('what', busy ? `${what}…` : what);
   $('what').classList.toggle('loading', thinking);
 }
+/** Only touch the DOM when the text really changed, so running animations are not restarted. */
+function setText(id, text) { const el = $(id); if (el.textContent !== text) el.textContent = text; }
 
 function setProgress() {
   const i = STAGES.indexOf(stage === 'technician' ? 'resolved' : stage);
@@ -291,45 +289,53 @@ function placeRing(target) {
 
 function renderGuide(s) {
   const g = $('guide');
-  g.classList.remove('result');
-  if (s.stage === 'resolved' || s.stage === 'technician') {
-    g.classList.add('on', 'result');
-    g.classList.remove('min');
-    $('stepNo').textContent = s.ticket?.id ? `Ticket ${s.ticket.id}` : '';
-    $('stepText').textContent = s.stage === 'resolved' ? 'Fixed. No technician visit needed.' : `Technician booked${s.ticket?.window ? ` for ${s.ticket.window}` : ''}. They already have the diagnosis.`;
-  } else if (s.lastSnapshot && s.step) {
-    const total = s.plan?.steps?.length;
-    $('stepNo').textContent = `Step ${s.step.n}${total ? ` of ${total}` : ''}`;
-    $('stepText').textContent = s.step.text;
-    g.classList.add('on');
-  } else if (s.lastSnapshot && s.observation?.target) {
-    $('stepNo').textContent = 'Look here';
-    $('stepText').textContent = s.observation.target.label || '';
-    g.classList.add('on');
-  }
+  const done = s.stage === 'resolved' || s.stage === 'technician';
   // Only circle a target that was found on this exact photo (INT-014), and only for the newest photo.
   const ids = s.screen, matches = !ids?.snapshotId || !ids?.observationSnapshotId || ids.snapshotId === ids.observationSnapshotId;
   const target = matches ? s.observation?.target ?? null : null;
+  g.classList.toggle('result', done);
+  if (done) {
+    g.classList.remove('min');
+    setText('stepNo', s.ticket?.id ? `Ticket ${s.ticket.id}` : '');
+    setText('stepText', s.stage === 'resolved' ? 'Fixed. No technician visit needed.' : `Technician booked${s.ticket?.window ? ` for ${s.ticket.window}` : ''}. They already have the diagnosis.`);
+  } else if (s.lastSnapshot && s.step) {
+    const total = s.plan?.steps?.length;
+    setText('stepNo', `Step ${s.step.n}${total ? ` of ${total}` : ''}`);
+    setText('stepText', s.step.text);
+  } else if (s.lastSnapshot && target) {
+    setText('stepNo', 'Look here');
+    setText('stepText', target.label || '');
+  }
+  // The agent blanks the photo every time it takes a new one. Keep the last card up, dimmed, instead of collapsing and
+  // re-opening it a few seconds later. It only goes away when the agent has no camera view at all (stage back to waiting).
+  if (done || (s.lastSnapshot && (s.step || target))) g.classList.add('on');
+  else if (!$('shot').dataset.src || (s.stage === 'waiting' && !s.lastSnapshot)) g.classList.remove('on');
+  g.classList.toggle('stale', !done && (!s.lastSnapshot || s.stage === 'looking' || s.stage === 'diagnosing'));
   const shot = $('shot');
   if (s.lastSnapshot && shot.dataset.src !== s.lastSnapshot) {
     const src = s.lastSnapshot;
     shot.dataset.src = src;
-    shot.onload = () => shot.dataset.src === src && placeRing(target);
-    shot.onerror = () => shot.dataset.src === src && placeRing(null);
-    placeRing(null);
-    shot.src = src;
-  } else placeRing(target);
-  if (!s.lastSnapshot && s.stage !== 'resolved' && s.stage !== 'technician') g.classList.remove('on');
+    const next = new Image(); // decode off screen first, so the card never collapses between photos
+    next.onload = () => {
+      if (shot.dataset.src !== src) return; // a newer photo already replaced this one
+      shot.onload = () => shot.dataset.src === src && placeRing(target);
+      shot.onerror = () => shot.dataset.src === src && placeRing(null);
+      shot.src = src;
+    };
+    next.onerror = () => shot.dataset.src === src && placeRing(null);
+    next.src = src;
+  } else if (s.lastSnapshot) placeRing(target);
 }
 
 /** Live diagnosis state from the agent, relayed by our server. */
-function followCall(callId) {
+function followCall(callId, roomName) {
   events?.close();
   events = new EventSource('/api/stream');
   events.onmessage = (m) => {
     try {
       const ev = JSON.parse(m.data);
-      if (ev.callId !== callId || ev.type !== 'state') return;
+      // The agent names the call by its job metadata, or by the room when that is missing. Accept either.
+      if ((ev.callId !== callId && ev.callId !== roomName) || ev.type !== 'state') return;
       stage = ev.state.stage;
       lastStep = ev.state.step || null;
       setProgress();
@@ -357,20 +363,25 @@ function makeMeter(mediaStreamTrack) {
   };
 }
 
-let agentLevel = () => 0, callerLevel = () => 0;
+let agentLevel = () => 0, callerLevel = () => 0, agentHeard = -1e9, callerHeard = -1e9, aSmooth = 0, cSmooth = 0;
 function loop() {
   if (!running) return;
+  const now = performance.now();
   const a = agentLevel(), c = muted ? 0 : callerLevel();
+  aSmooth += (a - aSmooth) * 0.35; cSmooth += (c - cSmooth) * 0.35;
   const ring = $('orb').querySelector('i');
-  ring.style.setProperty('--s', String(1 + a * 0.8));
-  ring.style.setProperty('--o', String(0.3 + a * 0.7));
+  ring.style.setProperty('--s', String(1 + aSmooth * 0.8));
+  ring.style.setProperty('--o', String(0.3 + aSmooth * 0.7));
   const bars = $('bars').children;
-  for (let k = 0; k < bars.length; k++) bars[k].style.height = `${4 + c * 12 * (1 - Math.abs(k - 2) * 0.22)}px`;
-  const at = a > 0.06, ct = c > 0.08;
+  for (let k = 0; k < bars.length; k++) bars[k].style.height = `${4 + cSmooth * 12 * (1 - Math.abs(k - 2) * 0.22)}px`;
+  // Speech has gaps between words. Hold "talking" through them so the label and the loader do not flicker.
+  if (a > 0.06) agentHeard = now;
+  if (c > 0.08) callerHeard = now;
+  const at = now - agentHeard < 450, ct = now - callerHeard < 350;
   if (at !== agentTalking || ct !== callerTalking) {
     agentTalking = at; callerTalking = ct;
     $('you').classList.toggle('hearing', ct);
-    $('youLabel').textContent = muted ? 'Muted' : ct ? 'Hearing you' : 'You';
+    setText('youLabel', muted ? 'Muted' : ct ? 'Hearing you' : 'You');
     renderVoice();
   }
   requestAnimationFrame(loop);
@@ -378,11 +389,22 @@ function loop() {
 
 async function publishCam() {
   const { createLocalVideoTrack, Track } = LivekitClient;
-  if (cam) { await room.localParticipant.unpublishTrack(cam); cam.stop(); }
   cam = await createLocalVideoTrack({ facingMode: facing, resolution: { width: 1280, height: 720 } });
   await room.localParticipant.publishTrack(cam, { name: 'facetime-remote-video', source: Track.Source.Camera, simulcast: false });
   cam.attach($('me'));
-  $('me').style.transform = facing === 'user' ? 'scaleX(-1)' : '';
+  await ensureFacing();
+}
+
+/** Some phones hand back the selfie lens for a plain facingMode hint. Check what we got and, if wrong, pick the lens by label. */
+async function ensureFacing() {
+  const settings = () => cam?.mediaStreamTrack?.getSettings?.() ?? {};
+  if (settings().facingMode !== facing) {
+    const cams = (await navigator.mediaDevices.enumerateDevices().catch(() => [])).filter((d) => d.kind === 'videoinput');
+    const want = facing === 'environment' ? /back|rear|environment/i : /front|user|face/i;
+    const pick = cams.find((d) => want.test(d.label)) || (cams.length > 1 ? (facing === 'environment' ? cams[cams.length - 1] : cams[0]) : null);
+    if (pick && pick.deviceId !== settings().deviceId) await cam.restartTrack({ deviceId: pick.deviceId }).catch((e) => console.warn('camera', e));
+  }
+  $('me').style.transform = (settings().facingMode || facing) === 'user' ? 'scaleX(-1)' : '';
 }
 
 async function start() {
@@ -419,7 +441,7 @@ async function start() {
     if (agentState === 'initializing') agentState = 'listening'; // agent is already in the warm room
     await room.localParticipant.publishTrack(mic, { name: 'facetime-remote-audio', source: Track.Source.Microphone });
     await publishCam();
-    followCall(session.callId);
+    followCall(session.callId, session.room);
     stage = 'waiting'; lastStep = null;
     setProgress(); renderVoice();
     $('guide').className = '';
@@ -457,7 +479,14 @@ $('call').onclick = start;
 $('hang').onclick = () => end(true);
 $('unmute').onclick = () => room?.startAudio();
 $('guide').onclick = () => { if (!$('guide').classList.contains('result')) $('guide').classList.toggle('min'); };
-$('flip').onclick = async () => { facing = facing === 'environment' ? 'user' : 'environment'; if (room) await publishCam(); };
+$('flip').onclick = async () => {
+  facing = facing === 'environment' ? 'user' : 'environment';
+  if (!cam) return;
+  $('flip').disabled = true;
+  // Restart the same track instead of republishing, so the technician keeps receiving frames without resubscribing.
+  try { await cam.restartTrack({ facingMode: facing }); await ensureFacing(); } catch (e) { console.warn('flip', e); }
+  $('flip').disabled = false;
+};
 $('mute').onclick = async () => {
   if (!mic) return;
   muted = !muted;
