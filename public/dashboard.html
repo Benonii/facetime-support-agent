@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Support desk</title>
+<style>
+  :root { --bg:#0b0f14; --panel:#151b23; --text:#e8edf2; --dim:#8b98a5; --accent:#3ddc97; --ring:#ffd23f; --bad:#ff5d5d; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px system-ui, sans-serif; padding: 24px; }
+  h1 { margin: 0 0 4px; font-size: 22px; } .sub { color: var(--dim); margin-bottom: 20px; }
+  #kpis { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .kpi { background: var(--panel); border-radius: 12px; padding: 14px 18px; min-width: 150px; }
+  .kpi b { display: block; font-size: 26px; margin-top: 4px; }
+  #calls { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  .call { background: var(--panel); border-radius: 14px; padding: 16px; }
+  .call img { width: 100%; border-radius: 10px; background: #000; aspect-ratio: 4/3; object-fit: contain; }
+  .row { display: flex; justify-content: space-between; margin-top: 8px; gap: 8px; } .dim { color: var(--dim); }
+  .stage { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); }
+  .step { color: var(--ring); margin-top: 8px; } ol { margin: 6px 0 0 18px; padding: 0; color: var(--dim); }
+</style>
+</head>
+<body>
+<h1>Support desk</h1>
+<div class="sub">Live FaceTime video support. Every call fixed on the line is a technician visit not paid for.</div>
+<div id="kpis"></div>
+<div id="calls"></div>
+<script>
+const TRUCK_ROLL = Number('__TRUCK_ROLL_COST__') || 150;
+const calls = new Map();
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function render() {
+  const all = [...calls.values()].filter((c) => c.stage !== 'waiting');
+  const fixed = all.filter((c) => c.stage === 'resolved').length;
+  const booked = all.filter((c) => c.stage === 'technician').length;
+  const closed = fixed + booked;
+  document.getElementById('kpis').innerHTML = [
+    ['Calls', all.length], ['Fixed on call', fixed], ['Technician booked', booked],
+    ['Fix rate', closed ? Math.round((100 * fixed) / closed) + '%' : '–'], ['Truck rolls avoided', '$' + fixed * TRUCK_ROLL],
+  ].map(([k, v]) => `<div class="kpi">${k}<b>${v}</b></div>`).join('');
+  document.getElementById('calls').innerHTML = all.reverse().map((c) => {
+    const o = c.observation;
+    return `<div class="call">
+      <div class="stage">${esc(c.stage)}</div>
+      ${c.lastSnapshot ? `<img src="${c.lastSnapshot}">` : ''}
+      <div class="row"><b>${esc(o ? `${o.device.brand} ${o.device.model} ${o.device.type}` : 'Waiting for device')}</b><span class="dim">${c.looks} looks</span></div>
+      ${o ? `<div class="dim">Lights: ${esc(o.indicators.map((l) => `${l.label} ${l.color} ${l.pattern}`).join(' · ') || 'none seen')}</div>` : ''}
+      ${o?.findings.length ? `<div class="dim">${esc(o.findings.join(' · '))}</div>` : ''}
+      ${c.plan ? `<div class="row"><span>Cause: ${esc(c.plan.likely_cause)}</span></div><ol>${c.plan.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>` : ''}
+      ${c.step ? `<div class="step">Now on step ${c.step.n}: ${esc(c.step.text)}</div>` : ''}
+      ${c.ticket ? `<div class="row"><span class="dim">Ticket ${esc(c.ticket.id)}</span><b>${c.ticket.outcome === 'resolved_on_call' ? 'Fixed on call' : 'Tech ' + esc(c.ticket.window)}</b></div>` : ''}
+    </div>`;
+  }).join('');
+}
+const es = new EventSource('/api/stream');
+es.onmessage = (m) => { const ev = JSON.parse(m.data); if (ev.type === 'state') { calls.set(ev.callId, ev.state); render(); } };
+render();
+</script>
+</body>
+</html>

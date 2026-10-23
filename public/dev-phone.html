@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dev phone</title>
+<style>
+  body { margin: 0; background: #0b0f14; color: #e8edf2; font: 16px system-ui, sans-serif; }
+  #agent { width: 100vw; height: 100vh; object-fit: contain; background: #000; }
+  #me { position: fixed; right: 12px; bottom: 90px; width: 30vw; border-radius: 12px; border: 2px solid #3ddc97; }
+  #bar { position: fixed; left: 0; right: 0; bottom: 0; padding: 16px; display: flex; gap: 8px; background: #0b0f14cc; }
+  button { flex: 1; padding: 14px; font-size: 18px; border: 0; border-radius: 12px; background: #3ddc97; color: #0b0f14; font-weight: 700; }
+  button.alt { background: #2a3440; color: #e8edf2; }
+  #log { position: fixed; top: 8px; left: 8px; font-size: 12px; opacity: .7; white-space: pre; }
+</style>
+</head>
+<body>
+<!-- Stand-in for a FaceTime caller: publishes your camera as "facetime-remote-video" so the agent code path is identical. -->
+<video id="agent" autoplay playsinline></video>
+<video id="me" autoplay playsinline muted></video>
+<div id="log"></div>
+<div id="bar">
+  <button id="start">Start call</button>
+  <button id="flip" class="alt">Flip camera</button>
+  <button id="end" class="alt">End</button>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/livekit-client@2.15.0/dist/livekit-client.umd.js"></script>
+<script>
+const { Room, RoomEvent, Track, createLocalVideoTrack, createLocalAudioTrack } = LivekitClient;
+const log = (m) => (document.getElementById('log').textContent += m + '\n');
+let room, cam, facing = 'environment';
+
+async function publishCam() {
+  if (cam) { await room.localParticipant.unpublishTrack(cam); cam.stop(); }
+  cam = await createLocalVideoTrack({ facingMode: facing, resolution: { width: 1280, height: 720 } });
+  await room.localParticipant.publishTrack(cam, { name: 'facetime-remote-video', source: Track.Source.Camera, simulcast: false });
+  cam.attach(document.getElementById('me'));
+}
+
+document.getElementById('start').onclick = async () => {
+  log('creating session…');
+  const s = await fetch('/api/dev-session', { method: 'POST' }).then((r) => r.json());
+  room = new Room({ adaptiveStream: false });
+  room.on(RoomEvent.TrackSubscribed, (track) => {
+    log('agent ' + track.kind);
+    track.attach(track.kind === 'video' ? document.getElementById('agent') : document.body.appendChild(document.createElement('audio')));
+  });
+  await room.connect(s.url, s.token);
+  log('connected ' + s.room);
+  const mic = await createLocalAudioTrack({ echoCancellation: true, noiseSuppression: true });
+  await room.localParticipant.publishTrack(mic, { name: 'facetime-remote-audio', source: Track.Source.Microphone });
+  await publishCam();
+  log('say hi 👋');
+};
+document.getElementById('flip').onclick = async () => { facing = facing === 'environment' ? 'user' : 'environment'; if (room) await publishCam(); };
+document.getElementById('end').onclick = () => room?.disconnect();
+</script>
+</body>
+</html>
