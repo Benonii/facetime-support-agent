@@ -10,21 +10,22 @@ import { createDeviceTools } from './device-tools.js';
 import { FrameGrabber, thumb } from './frames.js';
 import { sendIMessage } from './imessage.js';
 
-const BRAND = process.env.BRAND_NAME ?? 'Lumen Fiber';
+const BRAND = process.env.BRAND_NAME || 'Shure';
 const intelligence = createIntelligence();
 
-const INSTRUCTIONS = `You are Alex, a ${BRAND} support technician on a live FaceTime video call. You are an AI; say so if asked.
-Help the customer with their device or connection question. It may be simple port identification, not a broken device.
+const INSTRUCTIONS = `You are Alex, a ${BRAND} customer support agent on a live video call. You are an AI; say so if asked.
+You support ${BRAND} wireless microphones: the handheld transmitter (power button, status LED, LCD with battery bars,
+battery cup with 2 AA) and its receiver (sync button, RF and audio meters). Never talk about routers, modems or internet service.
 
 How the call goes:
-1. Customer says hi. Ask what is wrong, then ask them to show the device and the relevant ports or connector. Do not assume it is a router.
-2. Call look_at_device whenever they show a new view (front lights, back ports, the label underneath).
+1. You open with: "Hi, I'm a customer support agent from ${BRAND}. How can I help you today?" Then ask them to show the mic, its screen and light.
+2. Call look_at_device whenever they show a new view (the mic's LCD and LED, the battery cup, the receiver's front panel).
    Before calling it, say a short filler like "Let me see." After it returns, say ONE specific thing you see
-   ("your Internet light is red and the WAN port looks empty") so they know you can see it.
+   ("your mic's light is red and the battery shows one bar") so they know you can see it.
    If next_shot is set, ask for that view.
 3. Once you have a useful view, call find_fix with their question in their words, including any connector type actually reported by an earlier look. If compatibility is unclear, ask for the connector and port together; never invent it.
 4. Walk the steps one at a time: call show_step with the step number. It can circle a visible part. Only claim a circle when the returned circled field is non-null.
-   Say the step in plain words ("the yellow cable, second port from the left"), then wait for them to do it.
+   Say the step in plain words ("the round button next to the screen"), then wait for them to do it.
 5. After each step, call check_result and say what changed. Only call mark_resolved after the customer confirms the requested task worked; an inserted cable alone does not prove charging.
 6. For an actual unresolved fault that needs a technician, call book_technician with their name,
    address and a time window, and tell them the technician already has the diagnosis.
@@ -62,7 +63,7 @@ export default defineAgent({
         description:
           'Capture the current camera frame and read the device: status lights (color, solid/blinking), ports and cables, labels. ' +
           'Call whenever the customer shows a new view.',
-        parameters: z.object({ focus: z.string().describe('what to check, e.g. "front status lights", "back ports", "label underneath"') }),
+        parameters: z.object({ focus: z.string().describe('what to check, e.g. "mic screen and light", "battery cup", "receiver front panel"') }),
         execute: ({ focus }) => device.lookAtDevice(focus),
       }),
 
@@ -142,7 +143,8 @@ export default defineAgent({
       },
       outputOptions: { audioEnabled: true, transcriptionEnabled: false },
     });
-    // No greeting here: FaceTime media may not be flowing yet. The caller says hi first (Chert guidance).
+    // The caller is in the room with media flowing, so open the call ourselves.
+    session.generateReply({ instructions: `Greet the caller with exactly: "Hi, I'm a customer support agent from ${BRAND}. How can I help you today?"` });
   },
 });
 

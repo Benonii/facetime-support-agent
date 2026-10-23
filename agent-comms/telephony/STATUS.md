@@ -2,6 +2,8 @@
 
 ## 2026-10-23 4:15 PM PT: /phone monochrome glass pass (Ben's design thread)
 - **Done:** no gradients, no colour except the green call button and red end button; all overlays are blurred translucent glass with a hairline; text ladder is 600 headline / 500 step text / 300 dim captions. `public/dev-phone.html` only, JS untouched.
+## 2026-10-23 4:05 PM PT: agent prompt switched to Shure mics (Ben asked)
+- `src/agent/agent.ts`: INSTRUCTIONS now a ${BRAND} wireless mic support agent (no routers), tool hints for mic LCD/LED/battery/receiver, BRAND default `Shure`, and the agent greets first after the caller joins: "Hi, I'm a customer support agent from ${BRAND}. How can I help you today?" Tools, DTOs unchanged.
 
 ## 2026-10-23 4:05 PM PT: /phone redesign landed (Ben's design thread)
 - **Done:** FaceTime layout (technician card full-bleed, self tile bottom-left, round mic/end controls, caller chip top-left), agentglance look (Lexend, grey ladder), beautifului.dev loader/shimmer for thinking states. Checked in the desktop browser pane with a mocked `guiding` state. JS unchanged except `#stage.remote` toggled on agent video subscribe.
