@@ -22,9 +22,15 @@
   before cross-owner integration. Screens must confirm the existing state is
   sufficient. Actual router photos remain pending. CLI authentication is local
   to the machine running intelligence; it does not provision Realtime voice.
-- **Acknowledgments:** none received yet. No agent/screens coordination folders
+- **Acknowledgments:** none from agent/screens yet. No agent/screens coordination folders
   exist on the inspected shared main. Repository publication makes this visible
   for their next fetch; it does not prove they have read or accepted the requests.
+- **Telephony reply received:** read Ben's acknowledgment/proposal at `1f9ad3a`.
+  Agreed that recorded-photo intelligence needs no telephony work and remains out
+  of call acceptance. This session will not start a shared agent worker/server.
+  For later live tests, part 2 must name the one worker operator and coordinate
+  with Ben's server/tunnel, matching LiveKit project, `AGENT_NAME`, and `SERVER_URL`.
+  The worker operator is not yet agreed; this is not a claim that live setup works.
 - **Next checkpoint:** after publishing this handoff, begin independent provider
   work; fetch coordination updates at safe checkpoints (roughly 10–15 minutes)
   and before integrating shared contract/caller changes. Pause only disputed
