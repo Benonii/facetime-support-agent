@@ -68,7 +68,8 @@ app.onError((_error, c) => c.json({ error: 'The screen could not be rendered. Tr
 
 // Independent of the shared LiveKit project. This server never joins or dispatches an agent.
 const port = Number(process.env.SCREENS_PORT ?? 8790);
-const server = serve({ fetch: app.fetch, hostname: '127.0.0.1', port }, () => {
+const hostname = process.env.SCREENS_HOST ?? '0.0.0.0';
+const server = serve({ fetch: app.fetch, hostname, port }, () => {
   console.log(`[screens] Studio: http://localhost:${port}/`);
   console.log(`[screens] Dashboard: http://localhost:${port}/dashboard`);
   console.log('[screens] Scripted demo only. No API keys, camera, calls, or model usage.');
