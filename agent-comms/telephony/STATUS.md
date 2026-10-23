@@ -1,5 +1,8 @@
 # Telephony status
 
+## 2026-10-23 4:10 PM PT: INT-014 acknowledged, done in /phone
+- `public/dev-phone.html` JS only: the ring is drawn only when `screen.snapshotId` and `screen.observationSnapshotId` match (or either is absent), stale image `onload` callbacks are ignored, and the ring clears on image error. No styling touched. `screen.caption` not used yet.
+
 ## 2026-10-23 4:15 PM PT: /phone monochrome glass pass (Ben's design thread)
 - **Done:** no gradients, no colour except the green call button and red end button; all overlays are blurred translucent glass with a hairline; text ladder is 600 headline / 500 step text / 300 dim captions. `public/dev-phone.html` only, JS untouched.
 ## 2026-10-23 4:05 PM PT: agent prompt switched to Shure mics (Ben asked)

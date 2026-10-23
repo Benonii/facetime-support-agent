@@ -307,11 +307,18 @@ function renderGuide(s) {
     $('stepText').textContent = s.observation.target.label || '';
     g.classList.add('on');
   }
-  if (s.lastSnapshot && $('shot').dataset.src !== s.lastSnapshot) {
-    $('shot').dataset.src = s.lastSnapshot;
-    $('shot').onload = () => placeRing(s.step || s.observation?.target ? s.observation?.target : null);
-    $('shot').src = s.lastSnapshot;
-  } else placeRing(s.step || s.observation?.target ? s.observation?.target : null);
+  // Only circle a target that was found on this exact photo (INT-014), and only for the newest photo.
+  const ids = s.screen, matches = !ids?.snapshotId || !ids?.observationSnapshotId || ids.snapshotId === ids.observationSnapshotId;
+  const target = matches ? s.observation?.target ?? null : null;
+  const shot = $('shot');
+  if (s.lastSnapshot && shot.dataset.src !== s.lastSnapshot) {
+    const src = s.lastSnapshot;
+    shot.dataset.src = src;
+    shot.onload = () => shot.dataset.src === src && placeRing(target);
+    shot.onerror = () => shot.dataset.src === src && placeRing(null);
+    placeRing(null);
+    shot.src = src;
+  } else placeRing(target);
   if (!s.lastSnapshot && s.stage !== 'resolved' && s.stage !== 'technician') g.classList.remove('on');
 }
 
