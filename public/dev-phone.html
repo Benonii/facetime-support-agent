@@ -17,23 +17,16 @@
 <title>__BRAND__ Video Support</title>
 <style>
   /*
-    Visual world: a field technician's work light. Deep cable-duct navy, a fiber-blue
-    voice, and the same amber the technician uses to circle parts on the guide card.
-    The one authored moment: the voice ring that breathes with the technician's speech.
+    Visual world: a field technician's work light. Cable-duct navy, a fiber-blue voice,
+    and the amber the technician uses to circle parts. Your camera is the stage; the
+    technician answers on top of it with a circled photo of your own device.
   */
   :root {
-    --duct: #10233D;      /* base */
-    --duct-2: #172E4D;    /* raised */
-    --line: #26446B;      /* hairline on dark */
-    --paper: #EEF3F8;     /* text */
-    --mist: #9DB1C9;      /* secondary text */
-    --fiber: #7CC8FF;     /* the technician's voice */
-    --amber: #FFB547;     /* the circle, attention */
-    --ok: #5EE0A0;
-    --stop: #FF6B5E;
+    --duct: #10233D; --duct-2: #172E4D; --line: #26446B;
+    --paper: #EEF3F8; --mist: #9DB1C9;
+    --fiber: #7CC8FF; --amber: #FFB547; --ok: #5EE0A0; --stop: #FF6B5E;
     --ease: cubic-bezier(0.16, 1, 0.3, 1);
-    --safe-t: env(safe-area-inset-top);
-    --safe-b: env(safe-area-inset-bottom);
+    --safe-t: env(safe-area-inset-top); --safe-b: env(safe-area-inset-bottom);
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; height: 100%; background: var(--duct); color: var(--paper);
@@ -51,13 +44,12 @@
   .pitch h1 { font: 700 clamp(34px, 10vw, 46px)/1.02 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em; margin: 0 0 14px; max-width: 12ch; }
   .pitch p { margin: 0; color: var(--mist); max-width: 34ch; font-size: 17px; }
   .how { list-style: none; padding: 0; margin: 26px 0 0; display: grid; gap: 12px; counter-reset: s; }
-  .how li { counter-increment: s; display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: baseline; color: var(--paper); }
+  .how li { counter-increment: s; display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: baseline; }
   .how li::before { content: counter(s); font: 700 15px 'Bricolage Grotesque', sans-serif; color: var(--duct); background: var(--amber);
     width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; transform: translateY(4px); }
   .dock { display: grid; justify-items: center; gap: 12px; }
   #call { width: 100%; max-width: 420px; height: 64px; border: 0; border-radius: 20px; background: var(--fiber); color: var(--duct);
-    font-weight: 700; font-size: 18px; display: flex; align-items: center; justify-content: center; gap: 10px;
-    transition: transform 120ms var(--ease), opacity 150ms; }
+    font-weight: 700; font-size: 18px; display: flex; align-items: center; justify-content: center; gap: 10px; transition: transform 120ms var(--ease), opacity 150ms; }
   #call:active { transform: scale(0.97); }
   #call:disabled { opacity: 0.6; }
   #call svg { width: 22px; height: 22px; }
@@ -65,50 +57,91 @@
   #homeNote.err { color: var(--stop); }
   #install { display: none; border: 1px solid var(--line); background: transparent; border-radius: 14px; padding: 10px 16px; color: var(--mist); font-size: 14px; }
 
-  /* ---------- In call ---------- */
+  /* ---------- In call: your camera is the stage ---------- */
   #incall { background: #000; flex-direction: column; }
-  #stage { position: relative; flex: 1; overflow: hidden; }
-  #agent { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: var(--duct); opacity: 0; transition: opacity 400ms var(--ease); }
-  #agent.live { opacity: 1; }
-  #me { position: absolute; right: 14px; top: calc(14px + var(--safe-t)); width: 26vw; max-width: 128px; aspect-ratio: 3 / 4; object-fit: cover;
-    border-radius: 16px; border: 2px solid #ffffff30; background: var(--duct-2); box-shadow: 0 8px 24px #0006; }
-  #waiting { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: var(--mist); padding: 24px; }
-  #agent.live ~ #waiting { display: none; }
+  #stage { position: relative; flex: 1; overflow: hidden; background: var(--duct); }
+  #me { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  #agentVideo { display: none; }
 
-  /* Diagnosis progress: a real sequence, so it is numbered by position */
-  #progress { position: absolute; left: 14px; top: calc(14px + var(--safe-t)); display: flex; gap: 6px; padding: 6px; border-radius: 14px;
-    background: #10233Dcc; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-  #progress span { font-size: 12px; font-weight: 600; padding: 5px 9px; border-radius: 9px; color: var(--mist); transition: background 250ms var(--ease), color 250ms; }
+  #progress { position: absolute; left: 12px; right: 12px; top: calc(12px + var(--safe-t)); display: flex; gap: 6px; padding: 6px; border-radius: 14px;
+    background: #10233Dd9; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 3; justify-content: space-between; }
+  #progress span { flex: 1; text-align: center; font-size: 13px; font-weight: 600; padding: 6px 4px; border-radius: 9px; color: var(--mist);
+    transition: background 250ms var(--ease), color 250ms; }
   #progress span.done { color: var(--paper); }
   #progress span.now { background: var(--amber); color: var(--duct); }
   #progress span.fixed { background: var(--ok); color: var(--duct); }
 
-  /* The technician's voice: the one authored moment */
-  #voice { position: relative; display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: var(--duct); border-top: 1px solid var(--line); }
-  #orb { position: relative; width: 52px; height: 52px; flex: none; }
-  #orb i { position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--fiber); transform: scale(var(--s, 1)); opacity: var(--o, 0.35);
-    transition: transform 90ms linear, opacity 90ms linear; }
-  #orb i:nth-child(2) { inset: 8px; opacity: 0.7; }
-  #orb b { position: absolute; inset: 17px; border-radius: 50%; background: var(--fiber); }
-  #orb.thinking i:first-child { animation: think 1.4s var(--ease) infinite; }
-  @keyframes think { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(1.35); opacity: 0; } }
-  #say { min-width: 0; }
-  #say strong { display: block; font: 700 17px 'Bricolage Grotesque', sans-serif; }
-  #say small { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; color: var(--mist); font-size: 14px; }
+  /* Looking / diagnosing: a scan sweeps your camera so you know it is being read */
+  #scan { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 250ms var(--ease); z-index: 1; }
+  #scan.on { opacity: 1; }
+  #scan::before { content: ''; position: absolute; left: 0; right: 0; height: 30%; top: -30%;
+    background: linear-gradient(to bottom, transparent, #7CC8FF33 70%, #7CC8FFcc 100%); border-bottom: 2px solid var(--fiber);
+    animation: sweep 1.8s var(--ease) infinite; }
+  #scan::after { content: ''; position: absolute; inset: 18% 10%; border-radius: 22px;
+    background: linear-gradient(var(--fiber), var(--fiber)) 0 0 / 28px 3px, linear-gradient(var(--fiber), var(--fiber)) 0 0 / 3px 28px,
+      linear-gradient(var(--fiber), var(--fiber)) 100% 0 / 28px 3px, linear-gradient(var(--fiber), var(--fiber)) 100% 0 / 3px 28px,
+      linear-gradient(var(--fiber), var(--fiber)) 0 100% / 28px 3px, linear-gradient(var(--fiber), var(--fiber)) 0 100% / 3px 28px,
+      linear-gradient(var(--fiber), var(--fiber)) 100% 100% / 28px 3px, linear-gradient(var(--fiber), var(--fiber)) 100% 100% / 3px 28px;
+    background-repeat: no-repeat; }
+  @keyframes sweep { to { top: 100%; } }
 
-  #bar { display: flex; justify-content: space-around; align-items: center; padding: 10px 24px calc(14px + var(--safe-b)); background: var(--duct); }
-  .ctl { width: 60px; height: 60px; border-radius: 50%; border: 0; background: var(--duct-2); display: grid; place-items: center; transition: background 150ms, transform 120ms var(--ease); }
+  /* The answer: your own device, frozen, with the part circled */
+  #guide { position: absolute; left: 12px; right: 12px; top: calc(66px + var(--safe-t)); z-index: 2; border-radius: 20px; overflow: hidden;
+    background: var(--duct-2); box-shadow: 0 18px 50px #000a; transform-origin: top right;
+    clip-path: inset(0 0 100% 0 round 20px); opacity: 0; transition: clip-path 500ms var(--ease), opacity 200ms, transform 400ms var(--ease); }
+  #guide.on { clip-path: inset(0 0 0 0 round 20px); opacity: 1; }
+  #guide.min { transform: scale(0.34); }
+  #guide.min .cap { display: none; }
+  .shot { position: relative; line-height: 0; }
+  .shot img { width: 100%; max-height: 46vh; object-fit: contain; background: #000; display: block; }
+  #ring { position: absolute; border: 4px solid var(--amber); border-radius: 50%; box-shadow: 0 0 0 4px #10233D66, 0 0 24px #FFB547aa;
+    animation: pulse 1.2s ease-in-out infinite; display: none; }
+  @keyframes pulse { 50% { transform: scale(1.12); box-shadow: 0 0 0 4px #10233D33, 0 0 40px #FFB547; } }
+  #ringLabel { position: absolute; transform: translate(-50%, 8px); background: var(--amber); color: var(--duct); font: 600 13px Figtree, sans-serif;
+    line-height: 1.2; padding: 4px 8px; border-radius: 8px; white-space: nowrap; display: none; }
+  .cap { padding: 14px 16px 16px; }
+  .cap small { color: var(--amber); font-weight: 600; font-size: 13px; }
+  .cap p { margin: 2px 0 0; font: 600 19px/1.3 'Bricolage Grotesque', sans-serif; }
+  #guide.result { background: var(--ok); color: var(--duct); }
+  #guide.result .cap small { color: var(--duct); opacity: 0.7; }
+
+  /* Bottom: who is talking, and proof we hear you */
+  #panel { position: relative; background: var(--duct); border-top: 1px solid var(--line); padding: 14px 18px 8px; }
+  .row { display: flex; align-items: center; gap: 14px; }
+  #orb { position: relative; width: 54px; height: 54px; flex: none; }
+  #orb i { position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--fiber); transform: scale(var(--s, 1)); opacity: var(--o, 0.35);
+    transition: transform 80ms linear, opacity 80ms linear; }
+  #orb i:nth-child(2) { inset: 9px; opacity: 0.7; }
+  #orb b { position: absolute; inset: 18px; border-radius: 50%; background: var(--fiber); transition: background 200ms; }
+  #orb.thinking i:first-child { animation: think 1.3s var(--ease) infinite; }
+  #orb.thinking b { background: var(--amber); }
+  @keyframes think { 0% { transform: scale(0.8); opacity: 0.9; } 100% { transform: scale(1.4); opacity: 0; } }
+  #say { flex: 1; min-width: 0; }
+  #who { display: block; font: 700 18px 'Bricolage Grotesque', sans-serif; }
+  #what { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; color: var(--mist); font-size: 14px; }
+  #what.loading { background: linear-gradient(90deg, var(--mist) 30%, var(--paper) 50%, var(--mist) 70%) 0 0 / 300% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 1.6s linear infinite; }
+  @keyframes shimmer { to { background-position: -300% 0; } }
+  #you { display: flex; align-items: center; gap: 8px; flex: none; color: var(--mist); font-size: 12px; flex-direction: column; }
+  #bars { display: flex; gap: 3px; height: 28px; align-items: center; }
+  #bars i { width: 4px; height: 6px; border-radius: 2px; background: var(--mist); transition: height 70ms linear, background 150ms; }
+  #you.hearing #bars i { background: var(--ok); }
+  #you.hearing { color: var(--ok); }
+  #you.muted { color: var(--stop); }
+
+  #bar { display: flex; justify-content: space-around; align-items: center; padding: 8px 24px calc(14px + var(--safe-b)); background: var(--duct); }
+  .ctl { width: 58px; height: 58px; border-radius: 50%; border: 0; background: var(--duct-2); display: grid; place-items: center; transition: background 150ms, transform 120ms var(--ease); }
   .ctl:active { transform: scale(0.94); }
   .ctl svg { width: 26px; height: 26px; }
   .ctl.off { background: var(--paper); color: var(--duct); }
   #hang { background: var(--stop); width: 72px; }
-  #unmute { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); display: none; padding: 14px 20px; border: 0; border-radius: 14px;
-    background: var(--amber); color: var(--duct); font-weight: 700; }
+  #unmute { position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); display: none; padding: 14px 20px; border: 0; border-radius: 14px;
+    background: var(--amber); color: var(--duct); font-weight: 700; z-index: 4; }
 
   @media (prefers-reduced-motion: reduce) {
-    #orb i { transition: none; transform: none !important; }
-    #orb.thinking i:first-child { animation: none; opacity: 0.9; }
-    #agent { transition: none; }
+    #scan::before, #orb.thinking i:first-child, #ring, #what.loading { animation: none; }
+    #orb i, #guide { transition: opacity 150ms; }
+    #what.loading { color: var(--paper); background: none; }
   }
 </style>
 </head>
@@ -118,7 +151,7 @@
   <div class="brand"><img src="/icons/icon-192.png" alt="" />__BRAND__ Support</div>
   <div class="pitch">
     <h1>Show us what's wrong.</h1>
-    <p>A technician sees your device through your camera and circles exactly what to touch on your screen.</p>
+    <p>A technician sees your device through your camera and circles exactly what to touch.</p>
     <ol class="how">
       <li>Tap call and allow camera and microphone.</li>
       <li>Say hi, then point your camera at the router lights.</li>
@@ -137,17 +170,24 @@
 
 <section id="incall" class="screen" aria-label="Video call">
   <div id="stage">
-    <video id="agent" autoplay playsinline></video>
-    <div id="waiting">Connecting you to a technician…</div>
     <video id="me" autoplay playsinline muted></video>
+    <video id="agentVideo" autoplay playsinline muted></video>
+    <div id="scan" aria-hidden="true"></div>
     <div id="progress" aria-label="Diagnosis progress">
       <span data-s="looking">Look</span><span data-s="diagnosing">Diagnose</span><span data-s="guiding">Fix</span><span data-s="resolved">Done</span>
     </div>
+    <div id="guide" role="region" aria-label="What to do">
+      <div class="shot"><img id="shot" alt="Your device with the part to touch circled" /><div id="ring"></div><div id="ringLabel"></div></div>
+      <div class="cap"><small id="stepNo"></small><p id="stepText"></p></div>
+    </div>
     <button id="unmute">Tap to hear the technician</button>
   </div>
-  <div id="voice" aria-live="polite">
-    <div id="orb"><i></i><i></i><b></b></div>
-    <div id="say"><strong id="who">Technician</strong><small id="what">Joining the call</small></div>
+  <div id="panel" aria-live="polite">
+    <div class="row">
+      <div id="orb"><i></i><i></i><b></b></div>
+      <div id="say"><strong id="who">Joining</strong><span id="what">Connecting you to a technician</span></div>
+      <div id="you" aria-label="Your microphone"><div id="bars"><i></i><i></i><i></i><i></i><i></i></div><span id="youLabel">You</span></div>
+    </div>
   </div>
   <div id="bar">
     <button id="mute" class="ctl" aria-label="Mute microphone" aria-pressed="false">
@@ -168,31 +208,90 @@ if (!window.LivekitClient) document.write('<script src="https://unpkg.com/liveki
 </script>
 <script>
 const $ = (id) => document.getElementById(id);
-let room, cam, mic, session, wakeLock, events, meter, agentHere = false, facing = 'environment', muted = false;
+let room, cam, mic, session, wakeLock, events, audioCtx, running = false, facing = 'environment', muted = false;
+let lastTarget = null, agentState = 'initializing', stage = 'waiting', agentTalking = false, callerTalking = false, lastStep = null;
 
 const STAGES = ['looking', 'diagnosing', 'guiding', 'resolved'];
 const STAGE_TEXT = {
-  waiting: 'Listening. Say hi to start.',
+  waiting: 'Say hi, then point your camera at the device',
   looking: 'Looking at your device',
   diagnosing: 'Checking the manual for your model',
-  guiding: 'Follow the circled part on screen',
+  guiding: 'Follow the circled part',
   resolved: 'Fixed. No visit needed.',
   technician: 'Booking a technician visit',
 };
 
 function show(id) { document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('on', s.id === id)); }
 function note(text, err) { $('homeNote').textContent = text; $('homeNote').classList.toggle('err', !!err); }
-function say(text) { $('what').textContent = text; }
 
-function setStage(stage, step) {
+/** One place decides what the panel says, from agent state + call stage + who is talking. */
+function renderVoice() {
+  const busy = stage === 'looking' || stage === 'diagnosing';
+  const thinking = busy || agentState === 'thinking';
+  let who = 'Listening';
+  if (agentState === 'initializing') who = 'Joining';
+  else if (agentTalking || agentState === 'speaking') who = 'Talking';
+  else if (thinking) who = busy ? (stage === 'looking' ? 'Looking' : 'Diagnosing') : 'Thinking';
+  else if (callerTalking) who = 'Hearing you';
+  $('who').textContent = who;
+  $('orb').classList.toggle('thinking', thinking && !agentTalking);
+  $('scan').classList.toggle('on', busy);
+  const what = stage === 'guiding' && lastStep ? `Step ${lastStep.n}: ${lastStep.text}` : STAGE_TEXT[stage] || STAGE_TEXT.waiting;
+  $('what').textContent = busy ? `${what}…` : what;
+  $('what').classList.toggle('loading', thinking);
+}
+
+function setProgress() {
   const i = STAGES.indexOf(stage === 'technician' ? 'resolved' : stage);
   document.querySelectorAll('#progress span').forEach((el, k) => {
     el.classList.toggle('done', i > k);
-    el.classList.toggle('now', i === k && stage !== 'resolved');
-    el.classList.toggle('fixed', stage === 'resolved' && k === 3);
+    el.classList.toggle('now', i === k && stage !== 'resolved' && stage !== 'technician');
+    el.classList.toggle('fixed', (stage === 'resolved' || stage === 'technician') && k === 3);
   });
-  $('orb').classList.toggle('thinking', stage === 'looking' || stage === 'diagnosing');
-  say(stage === 'guiding' && step ? `Step ${step.n}: ${step.text}` : STAGE_TEXT[stage] || STAGE_TEXT.waiting);
+}
+
+const validBox = (b) => Array.isArray(b) && b.length === 4 && b.every((v) => Number.isFinite(v) && v >= 0 && v <= 1) && b[2] > b[0] && b[3] > b[1];
+
+/** Draw the returned photo with the target circled, sized to the image as actually displayed. */
+function placeRing(target) {
+  lastTarget = target;
+  const img = $('shot'), ring = $('ring'), label = $('ringLabel');
+  if (!target || !validBox(target.box) || !img.naturalWidth) { ring.style.display = label.style.display = 'none'; return; }
+  const W = img.clientWidth, H = img.clientHeight, s = Math.min(W / img.naturalWidth, H / img.naturalHeight);
+  const w = img.naturalWidth * s, h = img.naturalHeight * s, ox = (W - w) / 2, oy = (H - h) / 2;
+  const [x0, y0, x1, y1] = target.box, pad = 10;
+  Object.assign(ring.style, { display: 'block', left: `${ox + x0 * w - pad}px`, top: `${oy + y0 * h - pad}px`,
+    width: `${(x1 - x0) * w + pad * 2}px`, height: `${(y1 - y0) * h + pad * 2}px` });
+  if (target.label) {
+    label.textContent = target.label;
+    Object.assign(label.style, { display: 'block', left: `${ox + ((x0 + x1) / 2) * w}px`, top: `${oy + y1 * h + pad}px` });
+  } else label.style.display = 'none';
+}
+
+function renderGuide(s) {
+  const g = $('guide');
+  g.classList.remove('result');
+  if (s.stage === 'resolved' || s.stage === 'technician') {
+    g.classList.add('on', 'result');
+    g.classList.remove('min');
+    $('stepNo').textContent = s.ticket?.id ? `Ticket ${s.ticket.id}` : '';
+    $('stepText').textContent = s.stage === 'resolved' ? 'Fixed. No technician visit needed.' : `Technician booked${s.ticket?.window ? ` for ${s.ticket.window}` : ''}. They already have the diagnosis.`;
+  } else if (s.lastSnapshot && s.step) {
+    const total = s.plan?.steps?.length;
+    $('stepNo').textContent = `Step ${s.step.n}${total ? ` of ${total}` : ''}`;
+    $('stepText').textContent = s.step.text;
+    g.classList.add('on');
+  } else if (s.lastSnapshot && s.observation?.target) {
+    $('stepNo').textContent = 'Look here';
+    $('stepText').textContent = s.observation.target.label || '';
+    g.classList.add('on');
+  }
+  if (s.lastSnapshot && $('shot').dataset.src !== s.lastSnapshot) {
+    $('shot').dataset.src = s.lastSnapshot;
+    $('shot').onload = () => placeRing(s.step || s.observation?.target ? s.observation?.target : null);
+    $('shot').src = s.lastSnapshot;
+  } else placeRing(s.step || s.observation?.target ? s.observation?.target : null);
+  if (!s.lastSnapshot && s.stage !== 'resolved' && s.stage !== 'technician') g.classList.remove('on');
 }
 
 /** Live diagnosis state from the agent, relayed by our server. */
@@ -202,36 +301,51 @@ function followCall(callId) {
   events.onmessage = (m) => {
     try {
       const ev = JSON.parse(m.data);
-      if (ev.callId === callId && ev.type === 'state') setStage(ev.state.stage, ev.state.step);
-    } catch {}
+      if (ev.callId !== callId || ev.type !== 'state') return;
+      stage = ev.state.stage;
+      lastStep = ev.state.step || null;
+      setProgress();
+      renderGuide(ev.state);
+      renderVoice();
+    } catch (e) { console.warn(e); }
   };
 }
 
-/** The voice ring breathes with whoever is speaking: technician in fiber blue. */
-function meterAudio(track) {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const src = ctx.createMediaStreamSource(new MediaStream([track.mediaStreamTrack]));
-    const an = ctx.createAnalyser();
-    an.fftSize = 512;
-    src.connect(an);
-    const buf = new Uint8Array(an.fftSize);
-    const ring = $('orb').querySelector('i');
-    let speaking = false;
-    const tick = () => {
-      if (!meter) return ctx.close();
-      an.getByteTimeDomainData(buf);
-      let sum = 0;
-      for (const v of buf) sum += (v - 128) ** 2;
-      const level = Math.min(1, Math.sqrt(sum / buf.length) / 40);
-      ring.style.setProperty('--s', String(1 + level * 0.45));
-      ring.style.setProperty('--o', String(0.3 + level * 0.7));
-      const now = level > 0.08;
-      if (now !== speaking) { speaking = now; $('who').textContent = now ? 'Technician is talking' : 'Technician'; }
-      meter = requestAnimationFrame(tick);
-    };
-    meter = requestAnimationFrame(tick);
-  } catch (e) { console.warn('meter', e); }
+/** RMS level of a track, 0..1, read every frame. */
+function levelMeter(mediaStreamTrack) {
+  try { return makeMeter(mediaStreamTrack); } catch (e) { console.warn('meter', e); return () => 0; }
+}
+function makeMeter(mediaStreamTrack) {
+  const src = audioCtx.createMediaStreamSource(new MediaStream([mediaStreamTrack]));
+  const an = audioCtx.createAnalyser();
+  an.fftSize = 512;
+  src.connect(an);
+  const buf = new Uint8Array(an.fftSize);
+  return () => {
+    an.getByteTimeDomainData(buf);
+    let sum = 0;
+    for (const v of buf) sum += (v - 128) ** 2;
+    return Math.min(1, Math.sqrt(sum / buf.length) / 40);
+  };
+}
+
+let agentLevel = () => 0, callerLevel = () => 0;
+function loop() {
+  if (!running) return;
+  const a = agentLevel(), c = muted ? 0 : callerLevel();
+  const ring = $('orb').querySelector('i');
+  ring.style.setProperty('--s', String(1 + a * 0.5));
+  ring.style.setProperty('--o', String(0.3 + a * 0.7));
+  const bars = $('bars').children;
+  for (let k = 0; k < bars.length; k++) bars[k].style.height = `${6 + c * 22 * (1 - Math.abs(k - 2) * 0.22)}px`;
+  const at = a > 0.06, ct = c > 0.08;
+  if (at !== agentTalking || ct !== callerTalking) {
+    agentTalking = at; callerTalking = ct;
+    $('you').classList.toggle('hearing', ct);
+    $('youLabel').textContent = muted ? 'Muted' : ct ? 'Hearing you' : 'You';
+    renderVoice();
+  }
+  requestAnimationFrame(loop);
 }
 
 async function publishCam() {
@@ -247,39 +361,45 @@ async function start() {
   if (!window.LivekitClient) return note('Could not load the call library. Check your connection and reload.', true);
   const { Room, RoomEvent, Track, createLocalAudioTrack } = LivekitClient;
   $('call').disabled = true;
-  agentHere = false;
   note('Connecting…');
   try {
-    // Ask for the mic inside the tap so iOS shows the permission prompt.
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)(); // created inside the tap so it may run
     mic = await createLocalAudioTrack({ echoCancellation: true, noiseSuppression: true, autoGainControl: true });
+    callerLevel = levelMeter(mic.mediaStreamTrack);
     const res = await fetch('/api/dev-session', { method: 'POST' });
     session = await res.json();
     if (!res.ok) throw new Error(session.error || 'The support line is busy. Try again in a minute.');
 
     room = new Room({ adaptiveStream: false, dynacast: false });
     room.on(RoomEvent.TrackSubscribed, (track) => {
-      if (track.kind === 'video') {
-        track.attach($('agent'));
-        $('agent').classList.add('live');
-        agentHere = true;
-      } else {
+      if (track.kind === 'video') track.attach($('agentVideo'));
+      else {
         track.attach(document.body.appendChild(document.createElement('audio')));
-        meterAudio(track);
+        agentLevel = levelMeter(track.mediaStreamTrack);
       }
     });
+    room.on(RoomEvent.ParticipantAttributesChanged, (changed, p) => {
+      if (changed['lk.agent.state']) { agentState = changed['lk.agent.state']; renderVoice(); }
+    });
+    room.on(RoomEvent.ParticipantConnected, (p) => { if (p.attributes?.['lk.agent.state']) { agentState = p.attributes['lk.agent.state']; renderVoice(); } });
     room.on(RoomEvent.AudioPlaybackStatusChanged, () => { $('unmute').style.display = room.canPlaybackAudio ? 'none' : 'block'; });
     room.on(RoomEvent.Disconnected, () => end(false));
     await room.connect(session.url, session.token);
     await room.startAudio().catch(() => {}); // still inside the tap: unlocks speaker audio on iOS
+    for (const p of room.remoteParticipants?.values?.() ?? []) if (p.attributes?.['lk.agent.state']) agentState = p.attributes['lk.agent.state'];
+    if (agentState === 'initializing') agentState = 'listening'; // agent is already in the warm room
     await room.localParticipant.publishTrack(mic, { name: 'facetime-remote-audio', source: Track.Source.Microphone });
     await publishCam();
     followCall(session.callId);
+    stage = 'waiting'; lastStep = null;
+    setProgress(); renderVoice();
+    $('guide').className = '';
     show('incall');
-    setStage('waiting');
+    running = true; requestAnimationFrame(loop);
     wakeLock = await navigator.wakeLock?.request('screen').catch(() => null);
   } catch (e) {
     console.error(e);
-    mic?.stop(); cam?.stop(); room?.disconnect();
+    mic?.stop(); cam?.stop(); room?.disconnect(); audioCtx?.close();
     room = cam = mic = session = undefined;
     note(e.name === 'NotAllowedError' ? 'Allow camera and microphone in your browser settings, then try again.' : e.message, true);
   } finally {
@@ -291,13 +411,13 @@ function end(disconnect = true) {
   if (!session) return;
   const s = session;
   session = undefined;
-  if (meter) { cancelAnimationFrame(meter); meter = undefined; }
+  running = false;
+  agentLevel = callerLevel = () => 0;
   events?.close();
   if (disconnect) room?.disconnect();
-  cam?.stop(); mic?.stop();
+  cam?.stop(); mic?.stop(); audioCtx?.close().catch(() => {});
   room = cam = mic = undefined;
   wakeLock?.release().catch(() => {});
-  $('agent').classList.remove('live');
   fetch('/api/dev-session/end', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room: s.room }), keepalive: true }).catch(() => {});
   show('home');
   note('Call ended. Thanks for calling.');
@@ -306,6 +426,7 @@ function end(disconnect = true) {
 $('call').onclick = start;
 $('hang').onclick = () => end(true);
 $('unmute').onclick = () => room?.startAudio();
+$('guide').onclick = () => { if (!$('guide').classList.contains('result')) $('guide').classList.toggle('min'); };
 $('flip').onclick = async () => { facing = facing === 'environment' ? 'user' : 'environment'; if (room) await publishCam(); };
 $('mute').onclick = async () => {
   if (!mic) return;
@@ -313,7 +434,10 @@ $('mute').onclick = async () => {
   muted ? await mic.mute() : await mic.unmute();
   $('mute').classList.toggle('off', muted);
   $('mute').setAttribute('aria-pressed', String(muted));
+  $('you').classList.toggle('muted', muted);
+  $('youLabel').textContent = muted ? 'Muted' : 'You';
 };
+window.addEventListener('resize', () => placeRing(lastTarget));
 window.addEventListener('pagehide', () => end(true));
 
 // PWA: offline shell + install button where the browser supports it.
