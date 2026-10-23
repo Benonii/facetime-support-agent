@@ -9,7 +9,7 @@ import type { FixPlan, Intelligence, Observation } from '../contracts.js';
 import type { ChertIMessage, Part } from './chert.js';
 
 const BRAND = process.env.BRAND_NAME ?? 'Lumen Fiber';
-const DEFAULT_SYMPTOM = 'my internet is not working';
+const DEFAULT_SYMPTOM = 'my device is not working';
 const NEXT = /^\s*(next|done|ok(ay)?|did it|yes|y|k)\b/i;
 const TECH = /\b(tech|technician)\b/i;
 
@@ -99,7 +99,7 @@ export function createHandler(deps: { chert: ChertIMessage; intelligence: Intell
     }
 
     if (text) c.symptom = text;
-    await say(chat.id, `Hi, this is ${BRAND} support. Text me a photo of your router or modem showing the front lights (and the back ports if you can), and I'll tell you what's wrong and circle what to fix.`);
+    await say(chat.id, `Hi, I'm a customer support agent from ${BRAND}. How can I help you today?\n\nYou can text me a photo of your device and I'll circle what to fix.`);
   }
 
   /** Fire-and-forget per event, serialized per chat so replies stay in order. */
