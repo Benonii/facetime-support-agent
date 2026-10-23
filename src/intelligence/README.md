@@ -58,25 +58,49 @@ model call timings also record provider inference duration.
 
 ## Fixed device case and acceptance
 
-The demo product and fault are not selected yet. Once chosen, collect a faulty
-view, a comparison view after the relevant action, and an obscured view of the
-**same actual device**. An unplugged/connected WAN cable is one possible example,
-not a requirement. Record the symptom, visible identifiers, state, and uncertainty
-in a facts file. Do not assume cable colors or labels. The
-planning sketch and synthetic test images are not substitutes for device photos.
+The current proof uses Nikhil's MacBook photos: locate a visible MagSafe port,
+withhold a target when that port is on the other side or hidden, and identify an
+incompatible loose connector. It verifies contextual guidance, not a charging fault
+or completed repair. The device itself need not be broken for this proof.
 
-Run the faulty photo twice into separate directories, then the comparison and
-obscured photos with the same symptom. Check image hashes for repeatability,
-visible facts, changed observations, plausible next steps, source support,
-and circle placement against `processed.jpg`. Inspect the obscured result for
-uncertainty and no invented target. A connected cable alone is not proof of restored
-internet. Show the real outputs to Nikhil before expanding the live workflow.
+Two full left-side runs took 27.048 s and 27.544 s with the local CLI model
+`gpt-6.1-sol`. Both requested the missing connector before recommending a connection.
+Separate target probes located MagSafe and returned null for the opposite-side and
+front views. Original photos and generated results remain local because the laptop
+screen contains personal content. No source support or successful charging is implied.
 
-Hardware selection and actual device photos are still pending. Product-specific
-manual ingestion and tuned retrieval are deferred until that choice. A separate
-Keenable research session is exploring product-agnostic query/result design.
-Unit tests, CLI preflight, and a non-device negative case do not establish device
-accuracy or a completed repair/FaceTime call.
+For later fault/repair acceptance, collect the same actual device before and after
+the action plus an obscured view, and record human-confirmed facts. Repeat the first
+input, inspect matching image hashes, visible facts, next steps, source applicability,
+and circle position. A connected cable alone is not proof of restored function.
+Product-specific manual ingestion remains deferred; Keenable query research is a
+separate handoff, not an implemented retrieval change.
+
+## LiveKit agent with CLI intelligence
+
+```sh
+codex login status
+# .env.local: shared LIVEKIT_* credentials and OPENAI_API_KEY for Realtime voice
+# Coordinate this name with the person running chert dev. Only one worker per name.
+AGENT_NAME=intelligence-demo npm run agent:cli
+# Or keep the normal launcher and choose the provider explicitly:
+INTELLIGENCE_PROVIDER=codex-cli npm run agent
+```
+
+`agent:cli` explicitly enables real CLI intelligence and disables the mock switch.
+The existing `look_at_device`, `find_fix`, `show_step`, and `check_result` tools in
+`src/agent/agent.ts` delegate to the per-call bridge in `src/agent/device-tools.ts`.
+Device calls run in order. Missing frames and inference failures clear the matching
+image/target and return a retry instruction to voice. Step changes never reuse an
+old circle under a new instruction. Plans survive ordinary camera-view changes,
+and clearing a snapshot also clears the guide card image cache. `check_result` returns ports as well as lights.
+
+CLI authentication belongs to the machine running the worker. It does not supply
+Realtime audio credentials. The launch command is prepared; a real worker/call is
+not verified here. Telephony currently uses `chert dev` with caller video unverified.
+If no camera track arrives, use the team's HTTPS `/phone` path for camera testing.
+The worker publishes the guide card before opening a voice session, and slow
+intelligence stays outside call acceptance. No new screen endpoint or DTO is needed.
 
 ## Bridge behavior
 
@@ -102,10 +126,14 @@ accuracy or a completed repair/FaceTime call.
 ## Focused checks
 
 ```sh
-node --import tsx --test src/intelligence/*.test.ts
+node --import tsx --test src/intelligence/*.test.ts src/agent/device-tools.test.ts
 ./node_modules/.bin/tsc --noEmit --strict --skipLibCheck --target ES2023 --module NodeNext --moduleResolution NodeNext src/intelligence/*.ts
 ```
 
 These checks validate local boundaries, not live model accuracy, visual placement,
 latency or a completed FaceTime call. No-device handling does not create a ticket
 or claim the problem was resolved.
+
+Test gotcha: offline tests importing the LiveKit native renderer must call the
+SDK's `dispose()` after closing the card, otherwise native background resources
+keep the Node test process alive. `src/screens/card.test.ts` demonstrates teardown.

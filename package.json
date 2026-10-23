@@ -9,7 +9,8 @@
     "tunnel": "cloudflared tunnel --url http://localhost:8787",
     "try:intel": "tsx --env-file-if-exists=.env.local src/intelligence/try.ts",
     "typecheck": "tsc -p .",
-    "smoke": "tsx --env-file-if-exists=.env.local src/smoke.ts"
+    "smoke": "tsx --env-file-if-exists=.env.local src/smoke.ts",
+    "agent:cli": "INTELLIGENCE_PROVIDER=codex-cli MOCK_INTELLIGENCE=0 tsx --env-file=.env.local src/agent/agent.ts dev"
   },
   "dependencies": {
     "@hono/node-server": "2.1.5",

@@ -38,7 +38,10 @@ export class GuideCard implements CallerScreen {
   }
 
   async render(s: CallState) {
-    if (s.lastSnapshot && s.lastSnapshot !== this.snapSrc) {
+    if (!s.lastSnapshot) {
+      this.snapSrc = undefined;
+      this.snap = undefined;
+    } else if (s.lastSnapshot !== this.snapSrc) {
       this.snapSrc = s.lastSnapshot;
       this.snap = await loadImage(Buffer.from(s.lastSnapshot.split(',')[1], 'base64'));
     }
