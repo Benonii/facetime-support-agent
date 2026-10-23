@@ -21,13 +21,15 @@ async function invoke<T>(request: ModelRequest<T>, options: Options): Promise<T>
   if (!Buffer.isBuffer(request.jpeg) || !request.jpeg.length) throw new TypeError('codex: non-empty JPEG Buffer required');
   const dir = await mkdtemp(join(tmpdir(), 'support-intelligence-'));
   const start = performance.now();
+  const model = options.model ?? process.env.CODEX_MODEL;
+  let reportedModel = model ?? 'unknown (CLI did not report model)';
+  let status: 'success' | 'failed' = 'failed';
   try {
     const image = join(dir, 'frame.jpg'), schema = join(dir, 'schema.json');
     await writeFile(image, request.jpeg, { mode: 0o600 });
     await writeFile(schema, JSON.stringify(zodTextFormat(request.schema, request.name).schema), { mode: 0o600 });
     const args = ['exec', '--ephemeral', '--ignore-user-config', '--skip-git-repo-check',
       '--sandbox', 'read-only', '--color', 'never', '--output-schema', schema];
-    const model = options.model ?? process.env.CODEX_MODEL;
     if (model) args.push('--model', model);
     args.push('--image', image);
     const prompt = 'Do not use any tools, commands, network access, or files beyond the attached image. ' +
@@ -38,7 +40,7 @@ async function invoke<T>(request: ModelRequest<T>, options: Options): Promise<T>
     for (const key of ['PATH','HOME','CODEX_HOME','TMPDIR','USER','LOGNAME','LANG','SYSTEMROOT']) {
       if (process.env[key] !== undefined) env[key] = process.env[key];
     }
-    const { stdout, stderr } = await new Promise<{stdout: string; stderr: string}>((resolve, reject) => {
+    const { stdout } = await new Promise<{stdout: string; stderr: string}>((resolve, reject) => {
       const child = spawn(options.command ?? process.env.CODEX_BIN ?? 'codex', args, {
         cwd: dir, env, stdio: ['pipe','pipe','pipe'], detached: process.platform !== 'win32',
       });
@@ -58,6 +60,7 @@ async function invoke<T>(request: ModelRequest<T>, options: Options): Promise<T>
       child.on('error', () => { failure = new Error('codex: could not launch executable; check CODEX_BIN and login'); });
       child.stdin.on('error', () => { failure ??= new Error('codex: prompt input failed'); kill(); });
       child.on('close', code => {
+        reportedModel = stderr.match(/^model:\s*(.+)$/m)?.[1]?.trim() ?? reportedModel;
         clearTimeout(timer); kill(); // Also clean descendants if the leader exits first.
         if (failure) return reject(failure);
         if (code !== 0) return reject(new Error(`codex: exited with code ${code}; check login, quota, and model access`));
@@ -70,8 +73,10 @@ async function invoke<T>(request: ModelRequest<T>, options: Options): Promise<T>
     try { decoded = JSON.parse(stdout); } catch { throw new Error('codex: invalid JSON output'); }
     const parsed = request.schema.safeParse(decoded);
     if (!parsed.success) throw new Error('codex: output does not match schema');
-    options.onCall?.({ provider: 'codex-cli', model: stderr.match(/^model:\s*(.+)$/m)?.[1]?.trim() ?? model ?? 'unknown (CLI did not report model)',
-      operation: request.name, durationMs: Math.round(performance.now() - start) });
+    status = 'success';
     return parsed.data;
-  } finally { await rm(dir, { recursive: true, force: true }); }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+    options.onCall?.({ provider: 'codex-cli', model: reportedModel, operation: request.name, status, durationMs: Math.round(performance.now() - start) });
+  }
 }

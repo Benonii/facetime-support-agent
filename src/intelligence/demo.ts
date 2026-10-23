@@ -1,18 +1,29 @@
 import { createCanvas, loadImage } from '@napi-rs/canvas';
 import type { Intelligence, Observation } from '../contracts.js';
 
+export class RecordedCaseError extends Error {
+  constructor(public stage: string, public timings: Record<string, number>, cause: unknown) {
+    super(cause instanceof Error ? cause.message : 'Inference failed', { cause });
+  }
+}
+
 /** Same bridge as the live tools, with one frozen frame for reproducibility. */
 export async function runRecordedCase(intel: Intelligence, jpeg: Buffer, symptom: string, stepNumber = 1) {
   if (!Number.isInteger(stepNumber) || stepNumber < 1) throw new Error('step must be a positive integer');
   const timings: Record<string, number> = {};
   const timed = async <T>(stage: string, work: () => Promise<T>) => {
-    const start = performance.now(); const value = await work();
-    timings[stage] = Math.round(performance.now() - start); return value;
+    const start = performance.now();
+    try {
+      const value = await work(); timings[stage] = Math.round(performance.now() - start); return value;
+    } catch (cause) {
+      timings[stage] = Math.round(performance.now() - start);
+      throw new RecordedCaseError(stage, timings, cause);
+    }
   };
   const observation = await timed('observeMs', () => intel.observe({ jpeg }));
   const plan = await timed('findFixIncludingSearchMs', () => intel.findFix({ jpeg, observation, symptom }));
   const text = plan.steps[stepNumber - 1];
-  if (!text) throw new Error(`step ${stepNumber} is not in the returned plan (${plan.steps.length} steps)`);
+  if (!text) throw new RecordedCaseError('selectStep', timings, new Error(`step ${stepNumber} is not in the returned plan (${plan.steps.length} steps)`));
   const annotation = await timed('annotateMs', () => intel.observe({ jpeg, step: text }));
   return { observation, plan, annotation, step: { n: stepNumber, text }, timings };
 }

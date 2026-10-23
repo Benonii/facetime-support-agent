@@ -29,3 +29,11 @@ test('invisible image still produces an unannotated request for a better view',a
   const result=await runRecordedCase(intel,Buffer.from('fixture'),'offline');
   assert.equal(result.step.n,1); assert.equal(result.annotation.target,null);
 });
+
+
+test('failed stages retain stage name and elapsed timing without a successful result',async()=>{
+  const intel: Intelligence={observe:async()=>{throw new Error('model unavailable');},findFix:async()=>{throw new Error('must not run');}};
+  await assert.rejects(runRecordedCase(intel,Buffer.from('fixture'),'offline'),(error:any)=>{
+    assert.equal(error.stage,'observeMs'); assert.ok(error.timings.observeMs>=0); assert.match(error.message,/model unavailable/); return true;
+  });
+});

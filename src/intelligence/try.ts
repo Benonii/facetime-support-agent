@@ -5,7 +5,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { parseArgs } from 'node:util';
 import sharp from 'sharp';
 import { createIntelligence, selectProvider } from './index.js';
-import { runRecordedCase, renderPreview } from './demo.js';
+import { runRecordedCase, renderPreview, RecordedCaseError } from './demo.js';
 import type { ModelCall } from './model.js';
 
 const { values, positionals } = parseArgs({ allowPositionals: true, options: {
@@ -26,8 +26,11 @@ await mkdir(dirname(out),{recursive:true});
 await mkdir(out,{mode:0o700}); // Refuse existing directories to prevent stale/overwritten results.
 await writeFile(`${out}/processed.jpg`,jpeg,{mode:0o600});
 const calls: ModelCall[]=[];
+let stage = 'inference';
+let stageTimings: Record<string, number> = {};
 try {
   const result = await runRecordedCase(createIntelligence(call=>calls.push(call)),jpeg,symptom,step);
+  stageTimings = result.timings; stage = 'preview/export';
   const previewStart=performance.now();
   const preview=await renderPreview(jpeg,result.annotation,result.step.text);
   const metadata={
@@ -42,6 +45,6 @@ try {
   console.log(JSON.stringify({out,provider,kind:metadata.kind,step:result.step.n,timings:metadata.timings},null,2));
 } catch (error) {
   // No fabricated successful result. Keep the processed input and bounded failure metadata.
-  await writeFile(`${out}/failure.json`,JSON.stringify({provider,modelCalls:calls,error:error instanceof Error?error.message:'Unknown failure'},null,2)+'\n',{mode:0o600});
+  await writeFile(`${out}/failure.json`,JSON.stringify({provider,modelCalls:calls,stage:error instanceof RecordedCaseError?error.stage:stage, timings:{preprocessingMs,...(error instanceof RecordedCaseError?error.timings:stageTimings),totalMs:Math.round(performance.now()-started)},error:error instanceof Error?error.message:'Unknown failure'},null,2)+'\n',{mode:0o600});
   throw error;
 }

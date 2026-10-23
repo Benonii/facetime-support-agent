@@ -33,14 +33,14 @@ test('CLI sends private image/schema files and stdin prompt; removes files after
     assert.match(got.prompt,/symptom: offline/); assert.match(got.prompt,/Do not use.*tools/i);
     assert.equal(got.shape.additionalProperties,false); assert.deepEqual(got.shape.required,['answer']);
     assert.notEqual(got.cwd,process.cwd()); await assert.rejects(access(got.image)); await assert.rejects(access(got.schema));
-    assert.equal(calls[0].model,'verified-test-model');
+    assert.equal(calls[0].model,'verified-test-model'); assert.equal(calls[0].status,'success');
   } finally { await f.close(); }
 });
 
 test('CLI rejects nonzero, empty, non-JSON and schema-invalid output', async () => {
   for (const body of ['process.exit(2)', '', `console.log('garbage')`, `console.log('{"answer":123}')`]) {
     const f = await fixture(body);
-    try { await assert.rejects(codexModel({ command:f.command })(request)); }
+    try { const calls: any[]=[]; await assert.rejects(codexModel({ command:f.command, onCall:x=>calls.push(x) })(request)); assert.equal(calls[0]?.status,'failed'); assert.equal(calls[0]?.operation,'probe'); assert.ok(calls[0]?.durationMs>=0); }
     finally { await f.close(); }
   }
 });
@@ -49,7 +49,9 @@ test('timeout kills the process group and removes temporary files', async () => 
   const f = await fixture(''); const record = join(f.dir,'record.json');
   await writeFile(f.command, `#!${process.execPath}\nconst fs=require('node:fs'); const cp=require('node:child_process'); const child=cp.spawn(process.execPath,['-e','setInterval(()=>{},1000)']); fs.writeFileSync(${JSON.stringify(record)},JSON.stringify({pid:process.pid,child:child.pid,cwd:process.cwd()})); setInterval(()=>{},1000);`, { mode:0o700 });
   try {
-    await assert.rejects(codexModel({ command:f.command, timeoutMs:500 })(request), /timed out/);
+    const calls: any[]=[];
+    await assert.rejects(codexModel({ command:f.command, timeoutMs:500, onCall:x=>calls.push(x) })(request), /timed out/);
+    assert.equal(calls[0]?.status,'failed'); assert.ok(calls[0]?.durationMs>=450);
     const result = JSON.parse(await readFile(record,'utf8'));
     assert.throws(()=>process.kill(result.pid,0));
     // Descendant shutdown is asynchronous at the OS level.
